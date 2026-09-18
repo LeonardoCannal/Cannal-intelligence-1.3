@@ -1,0 +1,6 @@
+flask
+requests
+beautifulsoup4
+gunicorn
+openpyxl
+psycopg2-binary
