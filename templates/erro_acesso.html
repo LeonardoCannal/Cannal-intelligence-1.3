@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cannal · Acesso restrito</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body>
+  <div class="auth-tela">
+    <div class="auth-card" style="text-align:center;">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" class="auth-logo">
+      <h1>Acesso restrito</h1>
+      <p style="color:var(--cinza); font-size:14px;">Essa área é só para administradores do Cannal.</p>
+      <a href="{{ url_for('index') }}" class="btn-auth" style="display:block; text-decoration:none; margin-top:12px;">Voltar ao Cannal</a>
+    </div>
+  </div>
+</body>
+</html>

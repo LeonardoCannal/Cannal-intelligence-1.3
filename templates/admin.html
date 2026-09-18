@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cannal · Painel Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body>
+  <div class="admin-header">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" style="height:28px;">
+    <div>
+      <a href="{{ url_for('index') }}">Voltar ao Cannal</a>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <a href="{{ url_for('logout') }}">Sair</a>
+    </div>
+  </div>
+
+  <main class="admin-main">
+    <h1>Usuários cadastrados</h1>
+    <p>{{ usuarios|length }} pessoa(s) já criaram conta no Cannal.</p>
+
+    <table class="tabela-admin">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Cadastrado em</th>
+          <th>Último login</th>
+          <th>Admin</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for usuario in usuarios %}
+        <tr>
+          <td>{{ usuario.nome }}</td>
+          <td>{{ usuario.email }}</td>
+          <td>{{ usuario.criado_em }}</td>
+          <td>{{ usuario.ultimo_login }}</td>
+          <td>{% if usuario.is_admin %}<span class="badge-admin">Admin</span>{% else %}-{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cannal · Mapeie o mercado de prescritores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --roxo: #88AD36;
+    --roxo-escuro: #343C4C;
+    --roxo-claro: #343C4C;
+    --fundo: #D9D9D9;
+    --fundo-card: #FFFFFF;
+    --texto: #343C4C;
+    --texto-suave: #9C9D9D;
+    --borda: #D9D9D9;
+  }
+  *{ box-sizing: border-box; }
+  body{ margin:0; font-family:'Montserrat',sans-serif; background:var(--fundo); color:var(--texto); position:relative; }
+
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background-image:url("{{ url_for('static', filename='marca-dagua.png') }}");
+    background-repeat:no-repeat;
+    background-position:center 60%;
+    background-size:480px auto;
+    opacity:0.06;
+    z-index:0;
+    pointer-events:none;
+  }
+
+  header, .sub-header, main{
+    position:relative;
+    z-index:1;
+  }
+  h1,h2,h3,.brand{ font-family:'Montserrat',sans-serif; }
+
+  header{ background:var(--roxo-escuro); color:#fff; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; }
+  .brand{
+    display:flex;
+    align-items:center;
+  }
+
+  .logo-completo{
+    height:34px;
+    width:auto;
+    display:block;
+  }
+  nav{ display:flex; gap:4px; background:rgba(255,255,255,.08); padding:4px; border-radius:10px; }
+  nav button{ background:transparent; border:none; color:rgba(255,255,255,.8); padding:8px 18px; border-radius:8px; font-family:'Montserrat',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:background .15s ease,color .15s ease; }
+  .nav-link{ color:rgba(255,255,255,.8); text-decoration:none; padding:8px 18px; font-size:14px; font-weight:500; }
+  .nav-link:hover{ color:#fff; }
+  nav button.ativo{ background:var(--roxo); color:#fff; }
+  .sub-header{ background:var(--roxo); color:#fff; padding:10px 32px; font-size:13px; text-align:center; }
+
+  main{ max-width:920px; margin:0 auto; padding:56px 24px 80px; }
+  .hero h1{ font-size:34px; font-weight:700; line-height:1.25; margin:0 0 8px; color:var(--roxo-escuro); }
+  .hero p{ color:var(--texto-suave); font-size:16px; margin:0 0 32px; }
+
+  .card-busca{ background:var(--fundo-card); border:1px solid var(--borda); border-radius:16px; padding:24px; box-shadow:0 8px 24px rgba(52,60,76,.08); }
+  .campo{ margin-bottom:16px; }
+  .campo label{ display:block; font-size:13px; font-weight:600; color:var(--texto); margin-bottom:6px; }
+  .campo input, .campo select{ width:100%; padding:12px 14px; border:1.5px solid var(--borda); border-radius:10px; font-family:'Montserrat',sans-serif; font-size:14px; color:var(--texto); background:#fff; outline:none; transition:border-color .15s ease; }
+  .campo input:focus, .campo select:focus{ border-color:var(--roxo); }
+  .linha-local{ display:grid; grid-template-columns:2fr 1fr; gap:12px; }
+
+  .filtro-especialidades{
+    position:relative;
+  }
+
+  .filtro-btn{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 14px;
+    border:1.5px solid var(--borda);
+    border-radius:10px;
+    background:#fff;
+    font-family:'Montserrat',sans-serif;
+    font-size:14px;
+    color:var(--texto);
+    cursor:pointer;
+    text-align:left;
+  }
+
+  .filtro-btn:hover{
+    border-color:var(--roxo-claro);
+  }
+
+  .filtro-seta{
+    color:var(--roxo);
+    font-size:12px;
+    margin-left:8px;
+    flex-shrink:0;
+  }
+
+  .filtro-painel{
+    display:none;
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0;
+    right:0;
+    background:#fff;
+    border:1px solid var(--borda);
+    border-radius:12px;
+    box-shadow:0 12px 28px rgba(52,60,76,.16);
+    padding:8px;
+    z-index:30;
+    max-height:280px;
+    overflow-y:auto;
+  }
+
+  .filtro-painel.aberto{
+    display:block;
+  }
+
+  .filtro-opcao{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 10px;
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  .filtro-opcao:hover{
+    background:#EDEEEE;
+  }
+
+  .filtro-opcao input{
+    accent-color:var(--roxo);
+    width:16px;
+    height:16px;
+    flex-shrink:0;
+  }
+
+  .filtro-todas{
+    font-weight:600;
+    color:var(--roxo-escuro);
+  }
+
+  .filtro-divisor{
+    height:1px;
+    background:var(--borda);
+    margin:4px 6px 6px;
+  }
+  .aviso{ font-size:12px; color:var(--texto-suave); margin-top:-8px; margin-bottom:16px; }
+
+  .btn-buscar{ margin-top:8px; width:100%; padding:14px; background:var(--roxo); color:#fff; border:none; border-radius:10px; font-family:'Montserrat',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:background .15s ease; }
+  .btn-buscar:hover{ background:var(--roxo-escuro); }
+  .btn-buscar:disabled{ opacity:.6; cursor:default; }
+
+  .recentes{ margin-top:28px; }
+  .recentes-titulo{ font-size:13px; font-weight:600; color:var(--texto-suave); margin-bottom:10px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ background:#EDEEEE; color:var(--roxo-escuro); border:none; padding:7px 14px; border-radius:20px; font-size:13px; font-family:'Montserrat',sans-serif; cursor:pointer; }
+  .chip:hover{ background:var(--roxo-claro); color:#fff; }
+
+  #view-historico{ display:none; }
+
+  .resultados{ margin-top:32px; }
+  .resultados-cabecalho{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .resultados-titulo{ font-size:15px; font-weight:700; color:var(--roxo-escuro); }
+  .btn-exportar{ background:#fff; border:1.5px solid var(--roxo); color:var(--roxo); padding:8px 16px; border-radius:8px; font-family:'Montserrat',sans-serif; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .btn-exportar:hover{ background:var(--roxo); color:#fff; }
+  .btn-exportar:disabled{ opacity:.6; cursor:default; }
+  table.tabela-medicos{ width:100%; border-collapse:collapse; background:var(--fundo-card); border:1px solid var(--borda); border-radius:12px; overflow:hidden; }
+  table.tabela-medicos th, table.tabela-medicos td{ text-align:left; padding:12px 14px; font-size:13px; border-bottom:1px solid var(--borda); white-space:nowrap; }
+  table.tabela-medicos th{ background:var(--roxo-escuro); color:#fff; font-family:'Montserrat',sans-serif; font-weight:600; }
+  table.tabela-medicos tr:last-child td{ border-bottom:none; }
+  table.tabela-medicos a{ color:var(--roxo); text-decoration:none; font-weight:600; }
+  table.tabela-medicos a:hover{ text-decoration:underline; }
+
+  .tabela-scroll{
+    overflow-x:auto;
+    border-radius:12px;
+  }
+
+  .tag-fonte{
+    display:inline-block;
+    background:var(--fundo);
+    color:var(--roxo-escuro);
+    padding:3px 10px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
+  }
+
+  .estado-vazio, .estado-erro{ text-align:center; padding:24px; font-size:14px; }
+  .estado-vazio{ color:var(--texto-suave); }
+  .estado-erro{ color:#9E2A2A; }
+
+  .aviso-fonte{
+    background:#FFF7E6;
+    color:#8A6100;
+    border:1px solid #F0D48A;
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:12px;
+    margin-bottom:12px;
+  }
+
+  .historico-item{ background:var(--fundo-card); border:1px solid var(--borda); border-radius:12px; padding:16px 18px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .historico-info strong{ display:block; font-size:15px; color:var(--texto); }
+  .historico-info span{ font-size:13px; color:var(--texto-suave); }
+  .historico-btn{ background:transparent; border:1.5px solid var(--roxo); color:var(--roxo); padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .historico-btn:hover{ background:var(--roxo); color:#fff; }
+  .vazio{ text-align:center; padding:40px 0; color:var(--texto-suave); font-size:14px; }
+
+  /* ===== Versão mobile ===== */
+  @media (max-width: 640px){
+    header{
+      padding: 14px 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .logo-completo{ height: 28px; }
+
+    nav{
+      gap: 2px;
+      padding: 3px;
+      flex-wrap: wrap;
+    }
+
+    nav button, .nav-link{
+      padding: 7px 10px;
+      font-size: 12.5px;
+    }
+
+    .sub-header{
+      padding: 8px 16px;
+      font-size: 11.5px;
+    }
+
+    main{
+      padding: 28px 14px 56px;
+    }
+
+    .hero h1{
+      font-size: 23px;
+      line-height: 1.3;
+    }
+
+    .hero p{
+      font-size: 14px;
+      margin-bottom: 22px;
+    }
+
+    .card-busca{
+      padding: 16px;
+      border-radius: 12px;
+    }
+
+    .linha-local{
+      grid-template-columns: 1fr;
+    }
+
+    .filtro-painel{
+      max-height: 240px;
+    }
+
+    .resultados-cabecalho{
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .btn-exportar{
+      width: 100%;
+    }
+
+    table.tabela-medicos th, table.tabela-medicos td{
+      padding: 10px 12px;
+      font-size: 12.5px;
+    }
+
+    .historico-item{
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .historico-btn{
+      width: 100%;
+    }
+
+    .chips{
+      gap: 6px;
+    }
+
+    .chip{
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+  }
+
+  @media (max-width: 380px){
+    .hero h1{ font-size: 20px; }
+    .logo-completo{ height: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" class="logo-completo">
+  </div>
+  <nav>
+    <button id="tab-buscar" class="ativo">Buscar</button>
+    <button id="tab-historico">Histórico</button>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('admin') }}" class="nav-link">Painel Admin</a>
+    {% endif %}
+    <a href="{{ url_for('logout') }}" class="nav-link">Sair</a>
+  </nav>
+</header>
+<div class="sub-header">Mapeie o mercado. Encontre oportunidades. Expanda sua carteira.</div>
+
+<main>
+
+  <!-- VIEW: BUSCA -->
+  <section id="view-busca">
+    <div class="hero">
+      <h1>Encontre o médico certo. Perto de você!</h1>
+      <p>Defina seu mercado! A Cannal mapeia médicos por região e especialidade, apresentando nome, CRM, endereço e telefone, quando disponíveis.</p>
+    </div>
+
+    <div class="card-busca">
+      <div class="campo">
+        <label>Especialidades</label>
+        <div class="filtro-especialidades">
+          <button type="button" id="btn-filtro" class="filtro-btn">
+            <span id="filtro-label">Selecione as especialidades</span>
+            <span class="filtro-seta">▾</span>
+          </button>
+          <div class="filtro-painel" id="filtro-painel">
+            <label class="filtro-opcao filtro-todas">
+              <input type="checkbox" id="chk-todas">
+              <span>Selecionar todas</span>
+            </label>
+            <div class="filtro-divisor"></div>
+            {% for slug, nome in especialidades.items() %}
+            <label class="filtro-opcao">
+              <input type="checkbox" class="chk-especialidade" value="{{ slug }}">
+              <span>{{ nome }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="campo linha-local">
+        <div>
+          <label for="cidade">Cidade</label>
+          <input type="text" id="cidade" placeholder="Ex: Sorocaba">
+        </div>
+        <div>
+          <label for="uf">UF</label>
+          <select id="uf">
+            <option value="">--</option>
+            <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+            <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+            <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+            <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+            <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+            <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+            <option>SP</option><option>SE</option><option>TO</option>
+          </select>
+        </div>
+      </div>
+      <div class="aviso">CRM e cidade são captados automaticamente e podem variar de precisão conforme o perfil do médico.</div>
+
+      <button class="btn-buscar" id="btn-buscar">Buscar médicos</button>
+
+      <div class="recentes" id="bloco-recentes" style="display:none;">
+        <div class="recentes-titulo">Buscas recentes</div>
+        <div class="chips" id="chips-recentes"></div>
+      </div>
+
+      <div class="resultados" id="bloco-resultados" style="display:none;">
+        <div class="resultados-cabecalho">
+          <div class="resultados-titulo" id="resultados-titulo"></div>
+          <button class="btn-exportar" id="btn-exportar" style="display:none;">Exportar para Excel</button>
+        </div>
+        <div id="resultados-conteudo"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW: HISTÓRICO -->
+  <section id="view-historico">
+    <div class="hero">
+      <h1>Histórico de busca</h1>
+      <p>Suas últimas buscas nesta sessão.</p>
+    </div>
+    <div id="lista-historico"></div>
+  </section>
+
+</main>
+
+<script>
+  const especialidades = {{ especialidades | tojson }};
+
+  let historico = []; // em memória, some ao recarregar a página
+
+  const tabBuscar = document.getElementById('tab-buscar');
+  const tabHistorico = document.getElementById('tab-historico');
+  const viewBuscar = document.getElementById('view-busca');
+  const viewHistorico = document.getElementById('view-historico');
+
+  function mostrarBusca(){
+    tabBuscar.classList.add('ativo');
+    tabHistorico.classList.remove('ativo');
+    viewBuscar.style.display = 'block';
+    viewHistorico.style.display = 'none';
+  }
+
+  function mostrarHistorico(){
+    tabHistorico.classList.add('ativo');
+    tabBuscar.classList.remove('ativo');
+    viewHistorico.style.display = 'block';
+    viewBuscar.style.display = 'none';
+    renderizarHistorico();
+  }
+
+  tabBuscar.addEventListener('click', mostrarBusca);
+  tabHistorico.addEventListener('click', mostrarHistorico);
+
+  const checkboxesEspecialidade = document.querySelectorAll('.chk-especialidade');
+  const btnFiltro = document.getElementById('btn-filtro');
+  const painelFiltro = document.getElementById('filtro-painel');
+  const filtroLabel = document.getElementById('filtro-label');
+  const chkTodas = document.getElementById('chk-todas');
+  const inputCidade = document.getElementById('cidade');
+  const selectUf = document.getElementById('uf');
+  const btnBuscar = document.getElementById('btn-buscar');
+  const blocoRecentes = document.getElementById('bloco-recentes');
+  const chipsRecentes = document.getElementById('chips-recentes');
+  const listaHistorico = document.getElementById('lista-historico');
+  const blocoResultados = document.getElementById('bloco-resultados');
+  const resultadosTitulo = document.getElementById('resultados-titulo');
+  const resultadosConteudo = document.getElementById('resultados-conteudo');
+  const btnExportar = document.getElementById('btn-exportar');
+
+  let ultimoResultado = null;
+
+  function especialidadesSelecionadas(){
+    return Array.from(checkboxesEspecialidade)
+      .filter(chk => chk.checked)
+      .map(chk => chk.value);
+  }
+
+  function atualizarLabelFiltro(){
+    const slugs = especialidadesSelecionadas();
+    if(slugs.length === 0){
+      filtroLabel.textContent = 'Selecione as especialidades';
+    } else if(slugs.length === checkboxesEspecialidade.length){
+      filtroLabel.textContent = 'Todas as especialidades';
+    } else if(slugs.length <= 2){
+      filtroLabel.textContent = slugs.map(s => especialidades[s]).join(', ');
+    } else {
+      filtroLabel.textContent = `${slugs.length} especialidades selecionadas`;
+    }
+  }
+
+  btnFiltro.addEventListener('click', (e) => {
+    e.stopPropagation();
+    painelFiltro.classList.toggle('aberto');
+  });
+
+  document.addEventListener('click', (e) => {
+    if(!painelFiltro.contains(e.target) && e.target !== btnFiltro){
+      painelFiltro.classList.remove('aberto');
+    }
+  });
+
+  chkTodas.addEventListener('change', () => {
+    checkboxesEspecialidade.forEach(chk => { chk.checked = chkTodas.checked; });
+    atualizarLabelFiltro();
+  });
+
+  checkboxesEspecialidade.forEach(chk => {
+    chk.addEventListener('change', () => {
+      chkTodas.checked = especialidadesSelecionadas().length === checkboxesEspecialidade.length;
+      atualizarLabelFiltro();
+    });
+  });
+
+  function preencherFormulario(item){
+    checkboxesEspecialidade.forEach(chk => {
+      chk.checked = item.especialidadesSlugs.includes(chk.value);
+    });
+    chkTodas.checked = item.especialidadesSlugs.length === checkboxesEspecialidade.length;
+    atualizarLabelFiltro();
+    inputCidade.value = item.cidade;
+    selectUf.value = item.uf;
+  }
+
+  function formatarBusca(item){
+    const nomes = item.especialidadesSlugs.map(slug => especialidades[slug] || slug);
+    let partes = [nomes.join(', ')];
+    if(item.cidade || item.uf) partes.push([item.cidade, item.uf].filter(Boolean).join(' - '));
+    return partes.join(' · ');
+  }
+
+  function renderizarChips(){
+    chipsRecentes.innerHTML = '';
+    const ultimos = historico.slice(0, 5);
+    if(ultimos.length === 0){
+      blocoRecentes.style.display = 'none';
+      return;
+    }
+    blocoRecentes.style.display = 'block';
+    ultimos.forEach(item => {
+      const chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.textContent = formatarBusca(item);
+      chip.addEventListener('click', () => {
+        preencherFormulario(item);
+        executarBusca();
+      });
+      chipsRecentes.appendChild(chip);
+    });
+  }
+
+  function renderizarHistorico(){
+    listaHistorico.innerHTML = '';
+    if(historico.length === 0){
+      listaHistorico.innerHTML = '<div class="vazio">Nenhuma busca realizada ainda.</div>';
+      return;
+    }
+    historico.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'historico-item';
+      div.innerHTML = `
+        <div class="historico-info">
+          <strong>${formatarBusca(item)}</strong>
+          <span>${item.hora} · ${item.total} médico(s) encontrado(s)</span>
+        </div>
+      `;
+      const btn = document.createElement('button');
+      btn.className = 'historico-btn';
+      btn.textContent = 'Refazer busca';
+      btn.addEventListener('click', () => {
+        preencherFormulario(item);
+        mostrarBusca();
+        executarBusca();
+      });
+      div.appendChild(btn);
+      listaHistorico.appendChild(div);
+    });
+  }
+
+  function renderizarResultados(dados){
+    blocoResultados.style.display = 'block';
+    resultadosTitulo.textContent = `${dados.total} médico(s) encontrado(s) — ${dados.especialidades.join(', ')} em ${dados.cidade}`;
+
+    ultimoResultado = dados;
+
+    let avisoHtml = '';
+    if(dados.avisos && dados.avisos.length > 0){
+      avisoHtml = `<div class="aviso-fonte">Algumas fontes não responderam nesta busca (pode ser bloqueio temporário do site): ${dados.avisos.length} aviso(s).</div>`;
+    }
+
+    if(dados.total === 0){
+      resultadosConteudo.innerHTML = avisoHtml + '<div class="estado-vazio">Nenhum médico encontrado para essa busca.</div>';
+      btnExportar.style.display = 'none';
+      return;
+    }
+
+    btnExportar.style.display = 'inline-block';
+
+    let linhas = dados.medicos.map(m => `
+      <tr>
+        <td><a href="${m.perfil_url}" target="_blank">${m.nome}</a></td>
+        <td>${m.crm}</td>
+        <td>${m.especialidade}</td>
+        <td>${m.cidade}</td>
+        <td>${m.uf || '-'}</td>
+        <td>${m.endereco}</td>
+        <td>${m.telefone}</td>
+      </tr>
+    `).join('');
+
+    resultadosConteudo.innerHTML = avisoHtml + `
+      <div class="tabela-scroll">
+        <table class="tabela-medicos">
+          <thead>
+            <tr><th>Nome</th><th>CRM</th><th>Especialidade</th><th>Cidade</th><th>UF</th><th>Endereço</th><th>Telefone</th></tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function executarBusca(){
+    const cidade = inputCidade.value.trim();
+    if(!cidade){
+      alert('Informe a cidade para buscar.');
+      return;
+    }
+
+    const slugsSelecionados = especialidadesSelecionadas();
+    if(slugsSelecionados.length === 0){
+      alert('Selecione ao menos uma especialidade.');
+      return;
+    }
+
+    const uf = selectUf.value;
+
+    btnBuscar.disabled = true;
+    btnBuscar.textContent = 'Buscando médicos...';
+    blocoResultados.style.display = 'block';
+    resultadosTitulo.textContent = '';
+    resultadosConteudo.innerHTML = '<div class="estado-vazio">Captando dados, aguarde...</div>';
+
+    const params = new URLSearchParams();
+    slugsSelecionados.forEach(slug => params.append('especialidade', slug));
+    params.append('cidade', cidade);
+    params.append('uf', uf);
+
+    fetch(`/api/buscar?${params.toString()}`)
+      .then(res => res.json().then(dados => ({ ok: res.ok, dados })))
+      .then(({ ok, dados }) => {
+        if(!ok){
+          resultadosConteudo.innerHTML = `<div class="estado-erro">${dados.erro || 'Erro ao buscar.'}</div>`;
+          return;
+        }
+
+        renderizarResultados(dados);
+
+        const item = {
+          especialidadesSlugs: slugsSelecionados,
+          cidade,
+          uf,
+          total: dados.total,
+          hora: new Date().toLocaleString('pt-BR')
+        };
+        historico.unshift(item);
+        renderizarChips();
+      })
+      .catch(() => {
+        resultadosConteudo.innerHTML = '<div class="estado-erro">Não foi possível conectar ao servidor do Cannal.</div>';
+      })
+      .finally(() => {
+        btnBuscar.disabled = false;
+        btnBuscar.textContent = 'Buscar médicos';
+      });
+  }
+
+  btnBuscar.addEventListener('click', executarBusca);
+
+  function exportarExcel(){
+    if(!ultimoResultado || ultimoResultado.total === 0) return;
+
+    btnExportar.disabled = true;
+    btnExportar.textContent = 'Gerando arquivo...';
+
+    fetch('/api/exportar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ultimoResultado)
+    })
+      .then(res => {
+        if(!res.ok) throw new Error('Falha ao gerar o arquivo.');
+        return res.blob();
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cannal_${ultimoResultado.cidade || 'busca'}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(() => alert('Não foi possível exportar para Excel agora.'))
+      .finally(() => {
+        btnExportar.disabled = false;
+        btnExportar.textContent = 'Exportar para Excel';
+      });
+  }
+
+  btnExportar.addEventListener('click', exportarExcel);
+</script>
+
+</body>
+</html>
