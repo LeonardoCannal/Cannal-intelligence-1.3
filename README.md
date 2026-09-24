@@ -3,22 +3,52 @@
 Sistema de busca de médicos por região, com captação de dados de 5 fontes
 públicas: Doctoralia, Sechat, Ama-me, Kaya Doc e Cannaceia. Traz nome, CRM,
 especialidade, cidade, UF, endereço (quando disponível) e telefone (quando
-disponível). Agora com cadastro, login e painel de administrador.
+disponível). Tem cadastro com CPF, login, painel de administrador e um
+Painel Médico pessoal por usuário (controle de prospecção/visita).
 
 ## Cadastro, login e painel admin
 
 - Ao acessar o site, quem não estiver logado é levado pra tela de login.
-- Quem não tem conta clica em "Cadastre-se" (nome, e-mail e senha).
+- **O login é feito por CPF + senha** (não por e-mail). O e-mail continua
+  sendo pedido só no cadastro, como identificação adicional.
+- Quem não tem conta clica em "Cadastre-se" (nome, e-mail, **CPF**, senha
+  e confirmação de senha). O CPF é validado pelo algoritmo oficial dos
+  dígitos verificadores — CPF inválido ou já cadastrado é bloqueado.
+- Os campos de senha (login e cadastro) têm um botão de "olhinho" pra
+  mostrar/ocultar o que foi digitado.
 - **Só o e-mail `leonardo@grupocannal.com` vira administrador
   automaticamente**, não importa a ordem de cadastro. Qualquer outra
   conta é usuário comum. Pra adicionar outro admin fixo, é só me pedir
   (ou editar a lista `EMAILS_ADMIN` no `auth.py`).
 - Administradores veem um link "Painel Admin" no menu, com a lista de
-  todo mundo que já se cadastrou (nome, e-mail, data de cadastro e último
-  login).
+  todo mundo que já se cadastrou (nome, e-mail, CPF, data de cadastro,
+  último login e quantos médicos tem no Painel Médico de cada um).
 - Pra promover outra pessoa a admin depois, ainda não tem uma tela pra
   isso — é preciso editar o banco de dados diretamente. Avise se quiser
   que eu monte essa tela também.
+
+## Painel Médico (por usuário)
+
+- A aba "Histórico" foi substituída pela aba **"Painel Médico"**.
+- Na busca, cada médico encontrado tem um botão "Adicionar ao painel".
+  Ele entra automaticamente na coluna **Prospectados**.
+- Se esse mesmo médico aparecer de novo numa busca futura (do mesmo
+  usuário), em vez do botão aparece a marca **"Presente no painel
+  médico"** — a identificação é feita pelo CRM (ou por nome+cidade,
+  quando o CRM não foi encontrado).
+- Na aba Painel Médico, cada card tem um botão pra mover o médico entre
+  as colunas **Prospectados** e **Visitados**.
+- O painel é individual — cada usuário só vê e mexe no seu próprio.
+- **Só administradores** podem exportar o painel de qualquer usuário
+  pra Excel, direto pela tela de Painel Admin (botão "Exportar" ao lado
+  de cada usuário que já tem algo no painel). A exportação geral de
+  Excel que existia antes na tela de busca foi removida.
+
+## Links externos
+
+Os resultados da busca não têm mais links clicáveis pro perfil do
+médico em nenhum site externo (Doctoralia incluso) — só o texto com os
+dados captados.
 
 ### Banco de dados: local (SQLite) ou externo (PostgreSQL)
 
@@ -131,19 +161,25 @@ ele não precisa mais dos outros arquivos do projeto pra funcionar.
 
 ## Como funciona
 
-- `app.py`: servidor Flask, serve a página e expõe `/api/buscar` e `/api/exportar`.
-- `auth.py`: cadastro, login, sessão e painel admin. Usa SQLite local por
-  padrão, ou PostgreSQL externo automaticamente se a variável de ambiente
-  `DATABASE_URL` estiver definida.
+- `app.py`: servidor Flask. Serve a página e expõe `/api/buscar`,
+  `/api/painel` (listar), `/api/painel/adicionar`, `/api/painel/mover` e
+  `/admin/exportar/<id>` (exportação do painel de um usuário, admin only).
+- `auth.py`: cadastro (com CPF), login, sessão, painel admin e toda a
+  lógica do Painel Médico (adicionar, mover, listar, contar por usuário).
+  Usa SQLite local por padrão, ou PostgreSQL externo automaticamente se
+  a variável de ambiente `DATABASE_URL` estiver definida.
 - `scraper.py`: faz a captação em cada fonte (Doctoralia, Sechat, Ama-me,
   Kaya Doc, Cannaceia) e devolve os médicos encontrados, já filtrados pela
-  cidade pesquisada.
+  cidade pesquisada. Pro Doctoralia, visita a página individual de cada
+  médico (em paralelo) pra tentar captar o telefone, que só aparece ali.
 - `templates/index.html`: interface (identidade visual Cannal: fundo #343C4C
   na barra do logo, #88AD36 na barra abaixo, tipografia Montserrat, marca
-  d'água do ícone verde), com filtro de especialidades, abas de Buscar e
-  Histórico, tabela de resultados e exportação para Excel.
+  d'água do ícone verde), com filtro de especialidades (com busca por
+  texto e limite de 3 por vez), abas de Buscar e Painel Médico, e
+  resultados sem link para sites externos.
 - `templates/login.html`, `cadastro.html`, `admin.html`, `erro_acesso.html`:
-  telas de autenticação e o painel de usuários cadastrados.
+  telas de autenticação e o painel de usuários cadastrados (com CPF e
+  exportação do painel de cada um).
 
 ## Confiabilidade por fonte
 
@@ -164,11 +200,16 @@ ele não precisa mais dos outros arquivos do projeto pra funcionar.
 - **CRM**: extraído por regras heurísticas (regex) em várias fontes. Pode
   vir como "Não encontrado" em alguns casos.
 - **Telefone**: o Sechat é a fonte mais confiável (mostra na própria
-  página). No Doctoralia, o telefone só aparece quando o médico deixou
-  ele visível por trás do botão "Ver número" — o Cannal tenta captar
-  esse número direto do HTML, mas se o próprio Doctoralia não expuser
-  ele daquele jeito específico (varia perfil a perfil), aparece como
-  "Não disponível".
+  página de listagem). No Doctoralia, o telefone só existe na página
+  INDIVIDUAL de cada médico (por trás do botão "Mostrar número de
+  telefone") — por isso o Cannal visita o perfil de cada médico
+  encontrado (em paralelo, pra não demorar demais) só pra captar esse
+  dado. Isso deixa a busca no Doctoralia um pouco mais lenta que antes,
+  e se o médico não tiver deixado o telefone visível daquele jeito
+  específico, aparece como "Não disponível".
+- **Limite de 3 especialidades por busca**: é intencional, pra manter as
+  buscas rápidas e não sobrecarregar os sites de origem com muitas
+  requisições de uma vez.
 - **Fontes com erro não travam a busca**: se uma fonte falhar (bloqueio
   temporário, mudança na página), as outras continuam normalmente — um
   aviso aparece na tela informando quais fontes não responderam.

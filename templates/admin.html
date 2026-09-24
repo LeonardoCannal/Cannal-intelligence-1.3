@@ -26,9 +26,13 @@
         <tr>
           <th>Nome</th>
           <th>E-mail</th>
+          <th>CPF</th>
           <th>Cadastrado em</th>
           <th>Último login</th>
           <th>Admin</th>
+          <th>Painel médico</th>
+          <th></th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -36,13 +40,114 @@
         <tr>
           <td>{{ usuario.nome }}</td>
           <td>{{ usuario.email }}</td>
+          <td>{{ usuario.cpf }}</td>
           <td>{{ usuario.criado_em }}</td>
           <td>{{ usuario.ultimo_login }}</td>
           <td>{% if usuario.is_admin %}<span class="badge-admin">Admin</span>{% else %}-{% endif %}</td>
+          <td>{{ usuario.total_painel }} médico(s)</td>
+          <td>
+            {% if usuario.total_painel > 0 %}
+            <button type="button" class="link-exportar btn-abrir-painel" data-id="{{ usuario.id }}" data-nome="{{ usuario.nome }}">Abrir painel médico</button>
+            {% else %}-{% endif %}
+          </td>
+          <td>
+            {% if usuario.total_painel > 0 %}
+            <a href="{{ url_for('admin_exportar_painel', user_id=usuario.id) }}" class="link-exportar">Exportar</a>
+            {% else %}-{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </main>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-painel">
+      <div class="modal-cabecalho">
+        <h2 id="modal-titulo">Painel médico</h2>
+        <button type="button" id="modal-fechar" class="modal-fechar" aria-label="Fechar">&times;</button>
+      </div>
+      <div class="modal-colunas">
+        <div>
+          <h3>Prospectados <span class="painel-contador" id="modal-contador-prospectados">0</span></h3>
+          <div class="modal-lista" id="modal-lista-prospectados"></div>
+        </div>
+        <div>
+          <h3>Visitados <span class="painel-contador" id="modal-contador-visitados">0</span></h3>
+          <div class="modal-lista" id="modal-lista-visitados"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalTitulo = document.getElementById('modal-titulo');
+    const modalFechar = document.getElementById('modal-fechar');
+    const modalListaProspectados = document.getElementById('modal-lista-prospectados');
+    const modalListaVisitados = document.getElementById('modal-lista-visitados');
+    const modalContadorProspectados = document.getElementById('modal-contador-prospectados');
+    const modalContadorVisitados = document.getElementById('modal-contador-visitados');
+
+    function criarCardModal(item){
+      const div = document.createElement('div');
+      div.className = 'modal-card';
+      const linhaLocal = [item.cidade, item.uf].filter(Boolean).join(' - ');
+      const classeNome = item.status === 'visitado' ? ' class="nome-visitado"' : '';
+      div.innerHTML = `
+        <strong${classeNome}>${item.nome}</strong>
+        <span>${item.especialidade || ''}</span>
+        <span>${item.crm || ''}</span>
+        <span>${linhaLocal}</span>
+        <span>${item.endereco || ''}</span>
+        <span>${item.telefone || ''}</span>
+      `;
+      return div;
+    }
+
+    function abrirPainelDoUsuario(id, nome){
+      modalTitulo.textContent = `Painel médico — ${nome}`;
+      modalListaProspectados.innerHTML = '<div class="modal-vazio">Carregando...</div>';
+      modalListaVisitados.innerHTML = '';
+      modalContadorProspectados.textContent = '0';
+      modalContadorVisitados.textContent = '0';
+      modalOverlay.classList.add('aberto');
+
+      fetch(`/admin/painel/${id}`)
+        .then(res => res.json())
+        .then(dados => {
+          modalListaProspectados.innerHTML = '';
+          modalListaVisitados.innerHTML = '';
+          modalContadorProspectados.textContent = dados.prospectados.length;
+          modalContadorVisitados.textContent = dados.visitados.length;
+
+          if(dados.prospectados.length === 0){
+            modalListaProspectados.innerHTML = '<div class="modal-vazio">Nenhum médico prospectado.</div>';
+          } else {
+            dados.prospectados.forEach(item => modalListaProspectados.appendChild(criarCardModal(item)));
+          }
+
+          if(dados.visitados.length === 0){
+            modalListaVisitados.innerHTML = '<div class="modal-vazio">Nenhum médico visitado.</div>';
+          } else {
+            dados.visitados.forEach(item => modalListaVisitados.appendChild(criarCardModal(item)));
+          }
+        })
+        .catch(() => {
+          modalListaProspectados.innerHTML = '<div class="modal-vazio">Não foi possível carregar o painel.</div>';
+        });
+    }
+
+    document.querySelectorAll('.btn-abrir-painel').forEach(botao => {
+      botao.addEventListener('click', () => {
+        abrirPainelDoUsuario(botao.dataset.id, botao.dataset.nome);
+      });
+    });
+
+    modalFechar.addEventListener('click', () => modalOverlay.classList.remove('aberto'));
+    modalOverlay.addEventListener('click', (e) => {
+      if(e.target === modalOverlay) modalOverlay.classList.remove('aberto');
+    });
+  </script>
 </body>
 </html>

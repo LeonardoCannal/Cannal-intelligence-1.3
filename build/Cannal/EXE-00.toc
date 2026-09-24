@@ -1,5 +1,4 @@
-('C:\\Users\\Cannal Care '
- 'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\dist\\Cannal.exe',
+('C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\dist\\Cannal.exe',
  True,
  False,
  False,
@@ -31,32 +30,30 @@
  None,
  None,
  None,
- 'C:\\Users\\Cannal Care '
- 'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\build\\Cannal\\Cannal.pkg',
+ 'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\build\\Cannal\\Cannal.pkg',
  [('pyi-contents-directory _internal', '', 'OPTION'),
   ('PYZ-00.pyz',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\build\\Cannal\\PYZ-00.pyz',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\build\\Cannal\\PYZ-00.pyz',
    'PYZ'),
   ('struct',
    'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\build\\Cannal\\localpycs\\struct.pyc',
+   'Leo\\Desktop\\catalina\\build\\Cannal\\localpycs\\struct.pyc',
    'PYMODULE'),
   ('pyimod01_archive',
    'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\build\\Cannal\\localpycs\\pyimod01_archive.pyc',
+   'Leo\\Desktop\\catalina\\build\\Cannal\\localpycs\\pyimod01_archive.pyc',
    'PYMODULE'),
   ('pyimod02_importers',
    'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\build\\Cannal\\localpycs\\pyimod02_importers.pyc',
+   'Leo\\Desktop\\catalina\\build\\Cannal\\localpycs\\pyimod02_importers.pyc',
    'PYMODULE'),
   ('pyimod03_ctypes',
    'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\build\\Cannal\\localpycs\\pyimod03_ctypes.pyc',
+   'Leo\\Desktop\\catalina\\build\\Cannal\\localpycs\\pyimod03_ctypes.pyc',
    'PYMODULE'),
   ('pyimod04_pywin32',
    'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\build\\Cannal\\localpycs\\pyimod04_pywin32.pyc',
+   'Leo\\Desktop\\catalina\\build\\Cannal\\localpycs\\pyimod04_pywin32.pyc',
    'PYMODULE'),
   ('pyiboot01_bootstrap',
    'C:\\Users\\Cannal Care '
@@ -78,10 +75,7 @@
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
    'PYSOURCE'),
-  ('app',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\app.py',
-   'PYSOURCE'),
+  ('app', 'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\app.py', 'PYSOURCE'),
   ('python313.dll',
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\python313.dll',
@@ -195,36 +189,28 @@
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\sqlite3.dll',
    'BINARY'),
   ('static\\auth.css',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\static\\auth.css',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\static\\auth.css',
    'DATA'),
   ('static\\logo.png',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\static\\logo.png',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\static\\logo.png',
    'DATA'),
   ('static\\marca-dagua.png',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\static\\marca-dagua.png',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\static\\marca-dagua.png',
    'DATA'),
   ('templates\\admin.html',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\templates\\admin.html',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\templates\\admin.html',
    'DATA'),
   ('templates\\cadastro.html',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\templates\\cadastro.html',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\templates\\cadastro.html',
    'DATA'),
   ('templates\\erro_acesso.html',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\templates\\erro_acesso.html',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\templates\\erro_acesso.html',
    'DATA'),
   ('templates\\index.html',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\templates\\index.html',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\templates\\index.html',
    'DATA'),
   ('templates\\login.html',
-   'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\templates\\login.html',
+   'C:\\Users\\Cannal Care Leo\\Desktop\\catalina\\templates\\login.html',
    'DATA'),
   ('setuptools\\_vendor\\jaraco\\text\\Lorem ipsum.txt',
    'C:\\Users\\Cannal Care '
@@ -239,25 +225,17 @@
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\certifi\\cacert.pem',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\WHEEL',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\WHEEL',
-   'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\top_level.txt',
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\top_level.txt',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\METADATA',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\METADATA',
-   'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\RECORD',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\RECORD',
-   'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\licenses\\LICENSE',
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\licenses\\LICENSE',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\WHEEL',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\WHEEL',
    'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\REQUESTED',
    'C:\\Users\\Cannal Care '
@@ -267,126 +245,134 @@
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\INSTALLER',
    'DATA'),
-  ('flask-3.1.3.dist-info\\RECORD',
+  ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\METADATA',
    'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\RECORD',
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\METADATA',
    'DATA'),
-  ('flask-3.1.3.dist-info\\WHEEL',
+  ('setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\RECORD',
    'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\WHEEL',
-   'DATA'),
-  ('flask-3.1.3.dist-info\\entry_points.txt',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\entry_points.txt',
-   'DATA'),
-  ('click-8.5.0.dist-info\\RECORD',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\RECORD',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\RECORD',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
-   'DATA'),
-  ('click-8.5.0.dist-info\\licenses\\LICENSE.txt',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\licenses\\LICENSE.txt',
-   'DATA'),
-  ('click-8.5.0.dist-info\\INSTALLER',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\INSTALLER',
-   'DATA'),
-  ('click-8.5.0.dist-info\\METADATA',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\METADATA',
-   'DATA'),
-  ('werkzeug-3.1.8.dist-info\\INSTALLER',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\INSTALLER',
-   'DATA'),
-  ('flask-3.1.3.dist-info\\licenses\\LICENSE.txt',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\licenses\\LICENSE.txt',
-   'DATA'),
-  ('click-8.5.0.dist-info\\WHEEL',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\WHEEL',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\INSTALLER',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\INSTALLER',
-   'DATA'),
-  ('markupsafe-3.0.3.dist-info\\top_level.txt',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\top_level.txt',
-   'DATA'),
-  ('markupsafe-3.0.3.dist-info\\WHEEL',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\WHEEL',
-   'DATA'),
-  ('markupsafe-3.0.3.dist-info\\licenses\\LICENSE.txt',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\licenses\\LICENSE.txt',
-   'DATA'),
-  ('markupsafe-3.0.3.dist-info\\INSTALLER',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\INSTALLER',
-   'DATA'),
-  ('werkzeug-3.1.8.dist-info\\RECORD',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\RECORD',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\LICENSE.txt',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.7.1.dist-info\\RECORD',
    'DATA'),
   ('flask-3.1.3.dist-info\\INSTALLER',
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\INSTALLER',
    'DATA'),
-  ('werkzeug-3.1.8.dist-info\\WHEEL',
+  ('itsdangerous-2.2.0.dist-info\\METADATA',
    'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\WHEEL',
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\METADATA',
    'DATA'),
-  ('werkzeug-3.1.8.dist-info\\METADATA',
+  ('werkzeug-3.1.8.dist-info\\INSTALLER',
    'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\METADATA',
-   'DATA'),
-  ('flask-3.1.3.dist-info\\METADATA',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\METADATA',
-   'DATA'),
-  ('flask-3.1.3.dist-info\\REQUESTED',
-   'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\REQUESTED',
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\INSTALLER',
    'DATA'),
   ('werkzeug-3.1.8.dist-info\\licenses\\LICENSE.txt',
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\licenses\\LICENSE.txt',
    'DATA'),
-  ('markupsafe-3.0.3.dist-info\\METADATA',
+  ('click-8.5.0.dist-info\\INSTALLER',
    'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\METADATA',
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\INSTALLER',
+   'DATA'),
+  ('click-8.5.0.dist-info\\WHEEL',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\WHEEL',
+   'DATA'),
+  ('click-8.5.0.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('flask-3.1.3.dist-info\\REQUESTED',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\REQUESTED',
+   'DATA'),
+  ('werkzeug-3.1.8.dist-info\\WHEEL',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\WHEEL',
+   'DATA'),
+  ('click-8.5.0.dist-info\\METADATA',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\METADATA',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('markupsafe-3.0.3.dist-info\\top_level.txt',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\top_level.txt',
    'DATA'),
   ('itsdangerous-2.2.0.dist-info\\WHEEL',
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\WHEEL',
    'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\METADATA',
+  ('flask-3.1.3.dist-info\\WHEEL',
    'C:\\Users\\Cannal Care '
-   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\METADATA',
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\WHEEL',
+   'DATA'),
+  ('markupsafe-3.0.3.dist-info\\WHEEL',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\WHEEL',
+   'DATA'),
+  ('flask-3.1.3.dist-info\\RECORD',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\RECORD',
+   'DATA'),
+  ('markupsafe-3.0.3.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('flask-3.1.3.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\INSTALLER',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\INSTALLER',
+   'DATA'),
+  ('flask-3.1.3.dist-info\\METADATA',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\METADATA',
+   'DATA'),
+  ('click-8.5.0.dist-info\\RECORD',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.5.0.dist-info\\RECORD',
    'DATA'),
   ('markupsafe-3.0.3.dist-info\\RECORD',
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\RECORD',
    'DATA'),
+  ('werkzeug-3.1.8.dist-info\\RECORD',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\RECORD',
+   'DATA'),
+  ('flask-3.1.3.dist-info\\entry_points.txt',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.3.dist-info\\entry_points.txt',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\RECORD',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
+   'DATA'),
+  ('markupsafe-3.0.3.dist-info\\INSTALLER',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\INSTALLER',
+   'DATA'),
+  ('werkzeug-3.1.8.dist-info\\METADATA',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.8.dist-info\\METADATA',
+   'DATA'),
+  ('markupsafe-3.0.3.dist-info\\METADATA',
+   'C:\\Users\\Cannal Care '
+   'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe-3.0.3.dist-info\\METADATA',
+   'DATA'),
   ('base_library.zip',
    'C:\\Users\\Cannal Care '
-   'Leo\\Desktop\\Leonardo\\Cannal-Intelligence\\Cannal-Intelligence\\build\\Cannal\\base_library.zip',
+   'Leo\\Desktop\\catalina\\build\\Cannal\\base_library.zip',
    'DATA')],
  [],
  False,
  False,
- 1789735154,
+ 1790269276,
  [('run.exe',
    'C:\\Users\\Cannal Care '
    'Leo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
