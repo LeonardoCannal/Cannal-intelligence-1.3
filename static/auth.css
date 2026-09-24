@@ -315,3 +315,57 @@ table.tabela-admin tr:last-child td{ border-bottom: none; }
 @media (max-width: 600px){
   .modal-colunas{ grid-template-columns: 1fr; }
 }
+
+/* Rolagem horizontal pra tabelas largas (usado no painel admin) */
+.tabela-scroll{
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+table.tabela-admin{
+  min-width: 900px;
+}
+
+table.tabela-admin th, table.tabela-admin td{
+  white-space: nowrap;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 640px){
+  .auth-tela{ padding: 16px; }
+
+  .auth-card{ padding: 24px 20px; }
+
+  .admin-header{
+    padding: 14px 18px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .admin-header a{ font-size: 13px; }
+
+  .admin-main{
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+
+  .admin-main h1{ font-size: 19px; }
+  .admin-main p{ font-size: 13px; margin-bottom: 18px; }
+
+  table.tabela-admin th, table.tabela-admin td{
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+
+  .modal-overlay{ padding: 14px; }
+
+  .modal-painel{
+    padding: 18px;
+    max-height: 88vh;
+  }
+
+  .modal-cabecalho h2{ font-size: 15px; }
+
+  .modal-lista{ max-height: none; }
+}
