@@ -9,15 +9,24 @@ from auth import (
     inicializar_auth,
     criar_usuario,
     buscar_usuario_por_email,
+    buscar_usuario_por_cpf,
+    buscar_usuario_por_id,
+    cpf_valido,
+    formatar_cpf,
     checar_senha,
     atualizar_ultimo_login,
-    listar_usuarios,
+    listar_usuarios_com_contagem_painel,
     usuario_logado,
     fazer_login,
     fazer_logout,
     login_required,
     admin_required,
     ErroIntegridade,
+    computar_chave_medico,
+    adicionar_ao_painel,
+    mover_no_painel,
+    listar_painel_usuario,
+    chaves_no_painel_usuario,
 )
 import webbrowser
 import threading
@@ -66,6 +75,8 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 
 inicializar_auth(app, caminho_dados_persistentes("cannal.db"))
 
+MAX_ESPECIALIDADES_POR_BUSCA = 3
+
 ESPECIALIDADES = {
     "neurologista": {"nome": "Neurologista", "doctoralia": "neurologista", "sechat": "n6k3wbvn8k5ajvtb75ikhaaw"},
     "psiquiatra": {"nome": "Psiquiatra", "doctoralia": "psiquiatra", "sechat": "jiagob2yvu3v78j041jb70oz"},
@@ -106,33 +117,39 @@ def cadastro():
     erro = None
     nome_form = ""
     email_form = ""
+    cpf_form = ""
 
     if request.method == "POST":
         nome_form = request.form.get("nome", "").strip()
         email_form = request.form.get("email", "").strip().lower()
+        cpf_form = request.form.get("cpf", "").strip()
         senha = request.form.get("senha", "")
         confirmar = request.form.get("confirmar", "")
 
-        if not nome_form or not email_form or not senha:
+        if not nome_form or not email_form or not cpf_form or not senha:
             erro = "Preencha todos os campos."
+        elif not cpf_valido(cpf_form):
+            erro = "CPF inválido. Confira os números digitados."
         elif senha != confirmar:
             erro = "As senhas não coincidem."
         elif len(senha) < 6:
             erro = "A senha precisa ter pelo menos 6 caracteres."
         elif buscar_usuario_por_email(email_form):
             erro = "Já existe uma conta cadastrada com esse e-mail."
+        elif buscar_usuario_por_cpf(cpf_form):
+            erro = "Já existe uma conta cadastrada com esse CPF."
 
         if not erro:
             try:
-                user_id = criar_usuario(nome_form, email_form, senha)
+                user_id = criar_usuario(nome_form, email_form, cpf_form, senha)
             except ErroIntegridade:
-                erro = "Já existe uma conta cadastrada com esse e-mail."
+                erro = "Já existe uma conta cadastrada com esse e-mail ou CPF."
             else:
                 atualizar_ultimo_login(user_id)
                 fazer_login(user_id)
                 return redirect(url_for("index"))
 
-    return render_template("cadastro.html", erro=erro, nome=nome_form, email=email_form)
+    return render_template("cadastro.html", erro=erro, nome=nome_form, email=email_form, cpf=cpf_form)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -142,16 +159,16 @@ def login():
 
     erro = None
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
+        cpf = request.form.get("cpf", "").strip()
         senha = request.form.get("senha", "")
-        usuario = buscar_usuario_por_email(email)
+        usuario = buscar_usuario_por_cpf(cpf)
 
         if usuario and checar_senha(usuario, senha):
             atualizar_ultimo_login(usuario["id"])
             fazer_login(usuario["id"])
             return redirect(url_for("index"))
 
-        erro = "E-mail ou senha incorretos."
+        erro = "CPF ou senha incorretos."
 
     return render_template("login.html", erro=erro)
 
@@ -176,21 +193,100 @@ def admin():
 
     usuarios = [
         {
+            "id": u["id"],
             "nome": u["nome"],
             "email": u["email"],
+            "cpf": formatar_cpf(u["cpf"]),
             "criado_em": formatar_data(u["criado_em"]),
             "ultimo_login": formatar_data(u["ultimo_login"]),
             "is_admin": bool(u["is_admin"]),
+            "total_painel": u["total_painel"],
         }
-        for u in listar_usuarios()
+        for u in listar_usuarios_com_contagem_painel()
     ]
     return render_template("admin.html", usuarios=usuarios)
+
+
+@app.route("/admin/exportar/<int:user_id>")
+@admin_required
+def admin_exportar_painel(user_id):
+    usuario = buscar_usuario_por_id(user_id)
+    if not usuario:
+        return "Usuário não encontrado.", 404
+
+    painel = listar_painel_usuario(user_id)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Painel Médico"
+
+    colunas = ["Nome", "CRM", "Especialidade", "Cidade", "UF", "Endereço", "Telefone", "Status", "Adicionado em"]
+    ws.append(colunas)
+
+    cabecalho_fonte = Font(bold=True, color="FFFFFF")
+    cabecalho_fundo = PatternFill(start_color="343C4C", end_color="343C4C", fill_type="solid")
+    for celula in ws[1]:
+        celula.font = cabecalho_fonte
+        celula.fill = cabecalho_fundo
+
+    for m in painel:
+        try:
+            data_fmt = datetime.fromisoformat(m["adicionado_em"]).strftime("%d/%m/%Y %H:%M")
+        except (ValueError, TypeError):
+            data_fmt = m["adicionado_em"] or ""
+
+        ws.append([
+            m["nome"], m["crm"], m["especialidade"], m["cidade"], m["uf"],
+            m["endereco"], m["telefone"],
+            "Visitado" if m["status"] == "visitado" else "Prospectado",
+            data_fmt,
+        ])
+
+    larguras = [28, 16, 24, 18, 6, 38, 18, 14, 18]
+    for i, largura in enumerate(larguras, start=1):
+        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = largura
+
+    arquivo = io.BytesIO()
+    wb.save(arquivo)
+    arquivo.seek(0)
+
+    nome_usuario_arquivo = usuario["nome"].strip().replace(" ", "_")
+    nome_arquivo = f"painel_{nome_usuario_arquivo}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+
+    return send_file(
+        arquivo,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=nome_arquivo,
+    )
+
+
+@app.route("/admin/painel/<int:user_id>")
+@admin_required
+def admin_painel_usuario(user_id):
+    usuario = buscar_usuario_por_id(user_id)
+    if not usuario:
+        return jsonify({"erro": "Usuário não encontrado."}), 404
+
+    painel = listar_painel_usuario(user_id)
+    prospectados = [dict(m) for m in painel if m["status"] == "prospectado"]
+    visitados = [dict(m) for m in painel if m["status"] == "visitado"]
+
+    return jsonify({
+        "usuario": {"nome": usuario["nome"], "email": usuario["email"]},
+        "prospectados": prospectados,
+        "visitados": visitados,
+    })
 
 
 @app.route("/")
 @login_required
 def index():
-    return render_template("index.html", especialidades=NOMES_ESPECIALIDADES)
+    return render_template(
+        "index.html",
+        especialidades=NOMES_ESPECIALIDADES,
+        max_especialidades=MAX_ESPECIALIDADES_POR_BUSCA,
+    )
 
 
 @app.route("/api/buscar")
@@ -202,6 +298,8 @@ def api_buscar():
 
     if not especialidades_selecionadas:
         return jsonify({"erro": "Selecione ao menos uma especialidade."}), 400
+    if len(especialidades_selecionadas) > MAX_ESPECIALIDADES_POR_BUSCA:
+        return jsonify({"erro": f"Selecione no máximo {MAX_ESPECIALIDADES_POR_BUSCA} especialidades por busca."}), 400
     for slug in especialidades_selecionadas:
         if slug not in ESPECIALIDADES:
             return jsonify({"erro": f"Especialidade inválida: {slug}"}), 400
@@ -216,9 +314,7 @@ def api_buscar():
     #   (cada um tem uma URL diferente por especialidade).
     # - As fontes genéricas (Ama-me, Kaya Doc, Cannaceia) não filtram por
     #   especialidade — a página é a mesma não importa o que você busca —
-    #   então elas entram só UMA VEZ na lista toda, mesmo que você tenha
-    #   selecionado 26 especialidades. Isso evita repetir a mesma
-    #   requisição dezenas de vezes à toa.
+    #   então elas entram só UMA VEZ na lista toda.
     tarefas = []  # cada item: (rótulo_pra_erro, função, args)
 
     for slug in especialidades_selecionadas:
@@ -263,6 +359,13 @@ def api_buscar():
             except Exception as e:
                 fontes_com_erro.append(f"{rotulo}: {e}")
 
+    # Marca quais médicos já estão no painel do usuário logado, pra
+    # mostrar "Presente no painel médico" em vez do botão de adicionar.
+    usuario = usuario_logado()
+    chaves_do_painel = chaves_no_painel_usuario(usuario["id"])
+    for medico in todos_medicos:
+        medico["no_painel"] = computar_chave_medico(medico) in chaves_do_painel
+
     return jsonify({
         "especialidades": nomes_especialidades,
         "cidade": cidade,
@@ -273,56 +376,43 @@ def api_buscar():
     })
 
 
-@app.route("/api/exportar", methods=["POST"])
+@app.route("/api/painel", methods=["GET"])
 @login_required
-def api_exportar():
+def api_painel_listar():
+    usuario = usuario_logado()
+    painel = listar_painel_usuario(usuario["id"])
+    return jsonify({
+        "prospectados": [dict(m) for m in painel if m["status"] == "prospectado"],
+        "visitados": [dict(m) for m in painel if m["status"] == "visitado"],
+    })
+
+
+@app.route("/api/painel/adicionar", methods=["POST"])
+@login_required
+def api_painel_adicionar():
+    usuario = usuario_logado()
+    medico = request.get_json(force=True) or {}
+
+    if not medico.get("nome"):
+        return jsonify({"ok": False, "mensagem": "Dados do médico incompletos."}), 400
+
+    ok, mensagem = adicionar_ao_painel(usuario["id"], medico)
+    return jsonify({"ok": ok, "mensagem": mensagem})
+
+
+@app.route("/api/painel/mover", methods=["POST"])
+@login_required
+def api_painel_mover():
+    usuario = usuario_logado()
     dados = request.get_json(force=True) or {}
-    medicos = dados.get("medicos", [])
-    cidade = dados.get("cidade", "")
+    entrada_id = dados.get("id")
+    novo_status = dados.get("status")
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Médicos"
+    if not entrada_id or novo_status not in ("prospectado", "visitado"):
+        return jsonify({"ok": False, "mensagem": "Requisição inválida."}), 400
 
-    colunas = ["Nome", "CRM", "Especialidade", "Cidade", "UF", "Endereço", "Telefone", "Fonte", "Link do perfil"]
-    ws.append(colunas)
-
-    cabecalho_fonte = Font(bold=True, color="FFFFFF")
-    cabecalho_fundo = PatternFill(start_color="343C4C", end_color="343C4C", fill_type="solid")
-    for celula in ws[1]:
-        celula.font = cabecalho_fonte
-        celula.fill = cabecalho_fundo
-
-    for m in medicos:
-        ws.append([
-            m.get("nome", ""),
-            m.get("crm", ""),
-            m.get("especialidade", ""),
-            m.get("cidade", ""),
-            m.get("uf", ""),
-            m.get("endereco", ""),
-            m.get("telefone", ""),
-            m.get("fonte", ""),
-            m.get("perfil_url", ""),
-        ])
-
-    larguras = [28, 16, 24, 18, 6, 38, 18, 12, 45]
-    for i, largura in enumerate(larguras, start=1):
-        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = largura
-
-    arquivo = io.BytesIO()
-    wb.save(arquivo)
-    arquivo.seek(0)
-
-    nome_arquivo = f"cannal_{cidade or 'busca'}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
-    nome_arquivo = nome_arquivo.replace(" ", "_")
-
-    return send_file(
-        arquivo,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        as_attachment=True,
-        download_name=nome_arquivo,
-    )
+    ok = mover_no_painel(usuario["id"], int(entrada_id), novo_status)
+    return jsonify({"ok": ok})
 
 
 def abrir_navegador():

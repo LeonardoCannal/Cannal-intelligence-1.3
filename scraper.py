@@ -24,6 +24,7 @@ import re
 import unicodedata
 import requests
 from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 HEADERS = {
     "User-Agent": (
@@ -153,24 +154,25 @@ def extrair_endereco_doctoralia(texto: str) -> str:
     return match.group(1).strip() if match else ""
 
 
-def extrair_telefone_tel_link(elemento_base, max_niveis: int = 5):
+
+def buscar_telefone_no_perfil(perfil_url: str):
     """
-    Procura um link <a href="tel:..."> perto do elemento base, subindo
-    pelos pais se precisar. Muitos sites escondem o número real atrás de
-    um botão tipo "Ver número"/"Mostrar telefone", mas o link tel: já
-    vem no HTML mesmo antes do clique — só fica visualmente escondido
-    até o JavaScript do site "revelar" ele na tela. Como a gente lê o
-    HTML puro, dá pra pegar esse número direto, sem precisar simular o
-    clique no botão.
+    O telefone do Doctoralia só existe na página INDIVIDUAL de cada
+    médico (por trás do botão "Mostrar número de telefone") — na página
+    de listagem/busca ele nunca aparece. Por isso, pra pegar o telefone
+    de verdade, precisamos visitar o perfil de cada médico encontrado.
+    Retorna o número (como string) ou None se não achar.
     """
-    atual = elemento_base
-    for _ in range(max_niveis):
-        if atual is None or not hasattr(atual, "find"):
-            break
-        tel_link = atual.find("a", href=lambda h: h and h.lower().startswith("tel:"))
-        if tel_link:
-            return tel_link["href"].split(":", 1)[1].strip()
-        atual = atual.find_parent(["li", "article", "div", "section"])
+    try:
+        resposta = requests.get(perfil_url, headers=HEADERS, timeout=10)
+        resposta.raise_for_status()
+    except Exception:
+        return None
+
+    soup = BeautifulSoup(resposta.text, "html.parser")
+    tel_link = soup.find("a", href=lambda h: h and h.lower().startswith("tel:"))
+    if tel_link:
+        return tel_link["href"].split(":", 1)[1].strip()
     return None
 
 
@@ -229,14 +231,6 @@ def buscar_medicos_doctoralia(especialidade_slug: str, especialidade_nome: str, 
 
         cidade_encontrada = endereco.split(",")[-1].strip() if "," in endereco else cidade
 
-        # Primeiro tenta achar um link tel: (mais confiável — é onde o
-        # botão "Ver número" costuma esconder o telefone real). Se não
-        # achar, cai pro regex de texto como reserva.
-        telefone = extrair_telefone_tel_link(card or link, max_niveis=4)
-        if not telefone:
-            telefone_regex = extrair_telefone(texto_card)
-            telefone = telefone_regex if telefone_regex != "Não encontrado" else None
-
         vistos.add(href)
         medicos.append(registro_vazio(
             nome=nome,
@@ -244,11 +238,29 @@ def buscar_medicos_doctoralia(especialidade_slug: str, especialidade_nome: str, 
             cidade=cidade_encontrada,
             uf=uf,
             endereco=endereco or "Não encontrado",
-            telefone=telefone or "Não disponível",
+            telefone="Não disponível",
             especialidade=especialidade_nome,
             perfil_url=href,
             fonte="Doctoralia",
         ))
+
+    # O telefone só existe na página individual de cada médico, então
+    # precisa visitar cada perfil encontrado. Faz isso em paralelo (até
+    # 8 por vez) pra não multiplicar demais o tempo total da busca.
+    if medicos:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futuros = {
+                executor.submit(buscar_telefone_no_perfil, m["perfil_url"]): m
+                for m in medicos
+            }
+            for futuro in as_completed(futuros):
+                medico = futuros[futuro]
+                try:
+                    telefone_encontrado = futuro.result()
+                except Exception:
+                    telefone_encontrado = None
+                if telefone_encontrado:
+                    medico["telefone"] = telefone_encontrado
 
     return medicos
 
