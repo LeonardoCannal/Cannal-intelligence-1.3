@@ -21,44 +21,46 @@
     <h1>Usuários cadastrados</h1>
     <p>{{ usuarios|length }} pessoa(s) já criaram conta no Cannal.</p>
 
-    <table class="tabela-admin">
-      <thead>
-        <tr>
-          <th>Nome</th>
-          <th>E-mail</th>
-          <th>CPF</th>
-          <th>Cadastrado em</th>
-          <th>Último login</th>
-          <th>Admin</th>
-          <th>Painel médico</th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for usuario in usuarios %}
-        <tr>
-          <td>{{ usuario.nome }}</td>
-          <td>{{ usuario.email }}</td>
-          <td>{{ usuario.cpf }}</td>
-          <td>{{ usuario.criado_em }}</td>
-          <td>{{ usuario.ultimo_login }}</td>
-          <td>{% if usuario.is_admin %}<span class="badge-admin">Admin</span>{% else %}-{% endif %}</td>
-          <td>{{ usuario.total_painel }} médico(s)</td>
-          <td>
-            {% if usuario.total_painel > 0 %}
-            <button type="button" class="link-exportar btn-abrir-painel" data-id="{{ usuario.id }}" data-nome="{{ usuario.nome }}">Abrir painel médico</button>
-            {% else %}-{% endif %}
-          </td>
-          <td>
-            {% if usuario.total_painel > 0 %}
-            <a href="{{ url_for('admin_exportar_painel', user_id=usuario.id) }}" class="link-exportar">Exportar</a>
-            {% else %}-{% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="tabela-scroll">
+      <table class="tabela-admin">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>CPF</th>
+            <th>Cadastrado em</th>
+            <th>Último login</th>
+            <th>Admin</th>
+            <th>Painel médico</th>
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usuario in usuarios %}
+          <tr>
+            <td>{{ usuario.nome }}</td>
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.cpf }}</td>
+            <td>{{ usuario.criado_em }}</td>
+            <td>{{ usuario.ultimo_login }}</td>
+            <td>{% if usuario.is_admin %}<span class="badge-admin">Admin</span>{% else %}-{% endif %}</td>
+            <td>{{ usuario.total_painel }} médico(s)</td>
+            <td>
+              {% if usuario.total_painel > 0 %}
+              <button type="button" class="link-exportar btn-abrir-painel" data-id="{{ usuario.id }}" data-nome="{{ usuario.nome }}">Abrir painel médico</button>
+              {% else %}-{% endif %}
+            </td>
+            <td>
+              {% if usuario.total_painel > 0 %}
+              <a href="{{ url_for('admin_exportar_painel', user_id=usuario.id) }}" class="link-exportar">Exportar</a>
+              {% else %}-{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </main>
 
   <div class="modal-overlay" id="modal-overlay">
