@@ -193,18 +193,26 @@
 
     // Alguns bloqueadores (ex: Brave Shields) bloqueiam o cdnjs. Se o
     // Chart.js não carregou por essa via, tenta uma segunda fonte (jsDelivr)
-    // antes de mostrar a mensagem de "bloqueado".
+    // antes de mostrar a mensagem de "bloqueado". Não mexe no conteúdo dos
+    // canvas-wrapper enquanto espera — só desenharGraficosPagina() decide
+    // o que colocar ali, pra nunca apagar o <canvas> que ela precisa usar.
     if (typeof Chart !== 'undefined') {
       desenharGraficosPagina();
     } else {
-      document.querySelectorAll('.canvas-wrapper').forEach(el => {
-        el.innerHTML = '<div class="grafico-vazio">Carregando gráficos...</div>';
-      });
+      let jaTentou = false;
+      function tentarDesenhar(){
+        if (jaTentou) return;
+        jaTentou = true;
+        desenharGraficosPagina();
+      }
       const scriptFallback = document.createElement('script');
       scriptFallback.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
-      scriptFallback.onload = desenharGraficosPagina;
-      scriptFallback.onerror = desenharGraficosPagina;
+      scriptFallback.onload = tentarDesenhar;
+      scriptFallback.onerror = tentarDesenhar;
       document.head.appendChild(scriptFallback);
+      // Se nem onload nem onerror disparar em 6s (conexão travada), desiste
+      // e mostra a mensagem de bloqueado em vez de ficar "Carregando" pra sempre.
+      setTimeout(tentarDesenhar, 6000);
     }
 
     // ===== Mapa de calor por estado =====
