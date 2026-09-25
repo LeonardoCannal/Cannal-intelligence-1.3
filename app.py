@@ -31,8 +31,11 @@ from auth import (
     listar_solicitacoes_senha_pendentes,
     contar_solicitacoes_senha_pendentes,
     marcar_solicitacao_atendida,
+    buscar_solicitacao_senha_por_id,
+    definir_senha,
     registrar_busca,
     estatisticas_dashboard,
+    estatisticas_usuario,
 )
 import webbrowser
 import threading
@@ -179,6 +182,49 @@ def login():
     return render_template("login.html", erro=erro)
 
 
+def formatar_data_br(valor_iso):
+    if not valor_iso:
+        return "Nunca"
+    try:
+        return datetime.fromisoformat(valor_iso).strftime("%d/%m/%Y %H:%M")
+    except ValueError:
+        return valor_iso
+
+
+@app.route("/perfil", methods=["GET", "POST"])
+@login_required
+def perfil():
+    usuario = usuario_logado()
+    erro = None
+    sucesso = None
+
+    if request.method == "POST":
+        senha_atual = request.form.get("senha_atual", "")
+        nova_senha = request.form.get("nova_senha", "")
+        confirmar_senha = request.form.get("confirmar_senha", "")
+
+        if not checar_senha(usuario, senha_atual):
+            erro = "Senha atual incorreta."
+        elif len(nova_senha) < 6:
+            erro = "A nova senha precisa ter pelo menos 6 caracteres."
+        elif nova_senha != confirmar_senha:
+            erro = "As senhas novas não coincidem."
+        else:
+            definir_senha(usuario["id"], nova_senha)
+            usuario = buscar_usuario_por_id(usuario["id"])
+            sucesso = "Senha atualizada com sucesso."
+
+    return render_template(
+        "perfil.html",
+        usuario=usuario,
+        cpf_formatado=formatar_cpf(usuario["cpf"]),
+        criado_em=formatar_data_br(usuario["criado_em"]),
+        ultimo_login=formatar_data_br(usuario["ultimo_login"]),
+        erro=erro,
+        sucesso=sucesso,
+    )
+
+
 @app.route("/logout")
 @login_required
 def logout():
@@ -197,22 +243,14 @@ def api_esqueci_senha():
 @app.route("/admin")
 @admin_required
 def admin():
-    def formatar_data(valor_iso):
-        if not valor_iso:
-            return "Nunca"
-        try:
-            return datetime.fromisoformat(valor_iso).strftime("%d/%m/%Y %H:%M")
-        except ValueError:
-            return valor_iso
-
     usuarios = [
         {
             "id": u["id"],
             "nome": u["nome"],
             "email": u["email"],
             "cpf": formatar_cpf(u["cpf"]),
-            "criado_em": formatar_data(u["criado_em"]),
-            "ultimo_login": formatar_data(u["ultimo_login"]),
+            "criado_em": formatar_data_br(u["criado_em"]),
+            "ultimo_login": formatar_data_br(u["ultimo_login"]),
             "is_admin": bool(u["is_admin"]),
             "total_painel": u["total_painel"],
         }
@@ -293,13 +331,16 @@ def admin_painel_usuario(user_id):
     })
 
 
-def _formatar_data_notificacao(valor_iso):
-    if not valor_iso:
-        return ""
-    try:
-        return datetime.fromisoformat(valor_iso).strftime("%d/%m/%Y %H:%M")
-    except ValueError:
-        return valor_iso
+@app.route("/admin/estatisticas/<int:user_id>")
+@admin_required
+def admin_estatisticas_usuario(user_id):
+    usuario = buscar_usuario_por_id(user_id)
+    if not usuario:
+        return jsonify({"erro": "Usuário não encontrado."}), 404
+
+    stats = estatisticas_usuario(user_id)
+    stats["usuario"] = {"nome": usuario["nome"], "email": usuario["email"]}
+    return jsonify(stats)
 
 
 @app.route("/admin/notificacoes")
@@ -314,7 +355,7 @@ def admin_notificacoes():
                 "cpf": formatar_cpf(s["cpf"]),
                 "nome": s["nome"],
                 "email": s["email"],
-                "criado_em": _formatar_data_notificacao(s["criado_em"]),
+                "criado_em": formatar_data_br(s["criado_em"]),
             }
             for s in pendentes
         ],
@@ -326,6 +367,28 @@ def admin_notificacoes():
 def admin_notificacao_atender(solicitacao_id):
     ok = marcar_solicitacao_atendida(solicitacao_id)
     return jsonify({"ok": ok})
+
+
+@app.route("/admin/notificacoes/<int:solicitacao_id>/redefinir", methods=["POST"])
+@admin_required
+def admin_notificacao_redefinir(solicitacao_id):
+    dados = request.get_json(force=True) or {}
+    nova_senha = dados.get("senha", "")
+
+    if len(nova_senha) < 6:
+        return jsonify({"ok": False, "mensagem": "A senha precisa ter pelo menos 6 caracteres."}), 400
+
+    solicitacao = buscar_solicitacao_senha_por_id(solicitacao_id)
+    if not solicitacao:
+        return jsonify({"ok": False, "mensagem": "Solicitação não encontrada."}), 404
+
+    usuario = buscar_usuario_por_cpf(solicitacao["cpf"])
+    if not usuario:
+        return jsonify({"ok": False, "mensagem": "Não existe conta cadastrada com esse CPF."}), 404
+
+    definir_senha(usuario["id"], nova_senha)
+    marcar_solicitacao_atendida(solicitacao_id)
+    return jsonify({"ok": True})
 
 
 @app.route("/admin/dashboard")

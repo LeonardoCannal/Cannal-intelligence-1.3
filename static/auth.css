@@ -180,6 +180,14 @@ body{
   line-height: 1.5;
 }
 
+.aviso-texto-erro{
+  color: #C13B3B;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
 .aviso-btn-cancelar{
   width: 100%;
   margin-top: 10px;
@@ -323,6 +331,59 @@ body{
 .notif-item-info{ display: flex; flex-direction: column; gap: 2px; }
 .notif-item-info strong{ font-size: 13px; color: var(--escuro); }
 .notif-item-info span{ font-size: 11.5px; color: var(--cinza); }
+
+.notif-acoes{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.notif-btn-redefinir{
+  background: none;
+  border: 1.5px solid var(--escuro);
+  color: var(--escuro);
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  cursor: pointer;
+}
+
+.notif-btn-redefinir:hover{ background: var(--escuro); color: #fff; }
+
+.notif-redefinir{
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.notif-nova-senha{
+  flex: 1;
+  padding: 7px 10px;
+  border: 1.5px solid var(--claro);
+  border-radius: 7px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.notif-nova-senha:focus{ outline: none; border-color: var(--verde); }
+
+.notif-btn-confirmar-senha{
+  background: var(--verde);
+  color: #fff;
+  border: none;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.notif-btn-confirmar-senha:hover{ background: var(--escuro); }
 
 .notif-btn-atender{
   align-self: flex-start;
@@ -492,6 +553,65 @@ table.tabela-admin tr:last-child td{ border-bottom: none; }
   padding: 0;
   font-family: 'Montserrat', sans-serif;
 }
+
+.link-nome-usuario{
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--escuro);
+  font-family: 'Montserrat', sans-serif;
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+}
+
+.link-nome-usuario:hover{
+  color: var(--verde);
+  text-decoration-color: var(--verde);
+}
+
+.modal-painel-dash{ max-width: 780px; }
+
+.stats-grid-dash{
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-bottom: 20px;
+}
+
+.modal-secao-titulo{
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--escuro);
+  margin: 22px 0 10px;
+}
+
+.modal-secao-titulo:first-of-type{ margin-top: 0; }
+
+table.tabela-periodos{
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--claro);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+table.tabela-periodos th, table.tabela-periodos td{
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 13px;
+  white-space: normal;
+  border-bottom: 1px solid var(--claro);
+}
+
+table.tabela-periodos th{
+  background: var(--escuro);
+  color: #fff;
+  font-weight: 600;
+}
+
+table.tabela-periodos tr:last-child td{ border-bottom: none; }
 
 .painel-contador{
   background: var(--claro);

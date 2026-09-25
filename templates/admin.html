@@ -6,6 +6,7 @@
 <title>Cannal · Painel Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="admin-header">
@@ -22,6 +23,8 @@
         </div>
       </div>
       <a href="{{ url_for('index') }}">Voltar ao Cannal</a>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <a href="{{ url_for('perfil') }}">Meu Perfil</a>
       &nbsp;&nbsp;·&nbsp;&nbsp;
       <a href="{{ url_for('logout') }}">Sair</a>
     </div>
@@ -54,7 +57,7 @@
         <tbody>
           {% for usuario in usuarios %}
           <tr>
-            <td>{{ usuario.nome }}</td>
+            <td><button type="button" class="link-nome-usuario" data-id="{{ usuario.id }}" data-nome="{{ usuario.nome }}">{{ usuario.nome }}</button></td>
             <td>{{ usuario.email }}</td>
             <td>{{ usuario.cpf }}</td>
             <td>{{ usuario.criado_em }}</td>
@@ -94,6 +97,58 @@
           <div class="modal-lista" id="modal-lista-visitados"></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay-dash">
+    <div class="modal-painel modal-painel-dash">
+      <div class="modal-cabecalho">
+        <h2 id="modal-dash-titulo">Dashboard do usuário</h2>
+        <button type="button" id="modal-dash-fechar" class="modal-fechar" aria-label="Fechar">&times;</button>
+      </div>
+
+      <div class="stats-grid stats-grid-dash">
+        <div class="stat-card">
+          <span class="stat-label">Total prospectados</span>
+          <span class="stat-valor" id="dash-total-prospectados">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total visitados</span>
+          <span class="stat-valor" id="dash-total-visitados">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Visitados este mês</span>
+          <span class="stat-valor" id="dash-visitados-mes">0</span>
+          <span class="stat-extra" id="dash-variacao-mes"></span>
+        </div>
+      </div>
+
+      <h3 class="modal-secao-titulo">Médicos na base por período</h3>
+      <table class="tabela-periodos">
+        <thead>
+          <tr><th>Período</th><th>Prospectados</th><th>Visitados</th></tr>
+        </thead>
+        <tbody id="dash-tabela-periodos"></tbody>
+      </table>
+
+      <h3 class="modal-secao-titulo">Buscas realizadas</h3>
+      <div class="mini-stats">
+        <div class="mini-stat"><span class="mini-valor" id="dash-buscas-hoje">0</span><span class="mini-label">Hoje</span></div>
+        <div class="mini-stat"><span class="mini-valor" id="dash-buscas-7d">0</span><span class="mini-label">7 dias</span></div>
+        <div class="mini-stat"><span class="mini-valor" id="dash-buscas-30d">0</span><span class="mini-label">30 dias</span></div>
+      </div>
+
+      <h3 class="modal-secao-titulo">Top especialidades no painel</h3>
+      <div class="canvas-wrapper canvas-especialidades" id="dash-especialidades-wrapper">
+        <canvas id="dash-grafico-especialidades"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="aviso-overlay" id="aviso-overlay-notif">
+    <div class="aviso-card">
+      <p class="aviso-texto-erro" id="aviso-texto-notif"></p>
+      <button type="button" id="aviso-fechar-notif" class="btn-auth">Entendi</button>
     </div>
   </div>
 
@@ -161,12 +216,95 @@
       });
     });
 
+    // ===== Dashboard individual do usuário (clique no nome) =====
+    const modalOverlayDash = document.getElementById('modal-overlay-dash');
+    const modalDashTitulo = document.getElementById('modal-dash-titulo');
+    const modalDashFechar = document.getElementById('modal-dash-fechar');
+    let graficoEspecialidadesUsuario = null;
+
+    function abrirDashboardUsuario(id, nome){
+      modalDashTitulo.textContent = `Dashboard — ${nome}`;
+      modalOverlayDash.classList.add('aberto');
+
+      fetch(`/admin/estatisticas/${id}`)
+        .then(res => res.json())
+        .then(dados => {
+          document.getElementById('dash-total-prospectados').textContent = dados.total_prospectados;
+          document.getElementById('dash-total-visitados').textContent = dados.total_visitados;
+          document.getElementById('dash-visitados-mes').textContent = dados.visitados_mes_atual;
+
+          const variacaoEl = document.getElementById('dash-variacao-mes');
+          const seta = dados.variacao_visitados_pct >= 0 ? '↑' : '↓';
+          variacaoEl.textContent = `${seta} ${Math.abs(dados.variacao_visitados_pct)}% vs mês anterior`;
+          variacaoEl.className = 'stat-extra ' + (dados.variacao_visitados_pct >= 0 ? 'stat-alta' : 'stat-baixa');
+
+          document.getElementById('dash-buscas-hoje').textContent = dados.buscas_hoje;
+          document.getElementById('dash-buscas-7d').textContent = dados.buscas_7d;
+          document.getElementById('dash-buscas-30d').textContent = dados.buscas_30d;
+
+          const corpoTabela = document.getElementById('dash-tabela-periodos');
+          corpoTabela.innerHTML = dados.tabela_periodos.map(p => `
+            <tr><td>${p.label}</td><td>${p.prospectados}</td><td>${p.visitados}</td></tr>
+          `).join('');
+
+          const wrapperEspecialidades = document.getElementById('dash-especialidades-wrapper');
+          if(graficoEspecialidadesUsuario){
+            graficoEspecialidadesUsuario.destroy();
+            graficoEspecialidadesUsuario = null;
+          }
+
+          if(dados.top_especialidades.length === 0){
+            wrapperEspecialidades.innerHTML = '<div class="grafico-vazio">Ainda não há especialidades no painel desse usuário.</div>';
+          } else {
+            wrapperEspecialidades.innerHTML = '<canvas id="dash-grafico-especialidades"></canvas>';
+            if(typeof Chart !== 'undefined'){
+              graficoEspecialidadesUsuario = new Chart(document.getElementById('dash-grafico-especialidades'), {
+                type: 'bar',
+                data: {
+                  labels: dados.top_especialidades.map(e => e.especialidade),
+                  datasets: [{ data: dados.top_especialidades.map(e => e.total), backgroundColor: '#88AD36', borderRadius: 6, maxBarThickness: 22 }]
+                },
+                options: {
+                  indexAxis: 'y',
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+              });
+            }
+          }
+        });
+    }
+
+    document.querySelectorAll('.link-nome-usuario').forEach(botao => {
+      botao.addEventListener('click', () => {
+        abrirDashboardUsuario(botao.dataset.id, botao.dataset.nome);
+      });
+    });
+
+    modalDashFechar.addEventListener('click', () => modalOverlayDash.classList.remove('aberto'));
+    modalOverlayDash.addEventListener('click', (e) => {
+      if(e.target === modalOverlayDash) modalOverlayDash.classList.remove('aberto');
+    });
+
     modalFechar.addEventListener('click', () => modalOverlay.classList.remove('aberto'));
     modalOverlay.addEventListener('click', (e) => {
       if(e.target === modalOverlay) modalOverlay.classList.remove('aberto');
     });
 
     // ===== Notificações (esqueci minha senha) =====
+    const avisoOverlayNotif = document.getElementById('aviso-overlay-notif');
+    const avisoTextoNotif = document.getElementById('aviso-texto-notif');
+    document.getElementById('aviso-fechar-notif').addEventListener('click', () => avisoOverlayNotif.classList.remove('aberto'));
+    avisoOverlayNotif.addEventListener('click', (e) => {
+      if(e.target === avisoOverlayNotif) avisoOverlayNotif.classList.remove('aberto');
+    });
+    function mostrarAvisoNotif(mensagem){
+      avisoTextoNotif.textContent = mensagem;
+      avisoOverlayNotif.classList.add('aberto');
+    }
+
     const btnNotif = document.getElementById('btn-notif');
     const notifPainel = document.getElementById('notif-painel');
     const notifBadge = document.getElementById('notif-badge');
@@ -175,13 +313,22 @@
     function criarItemNotif(s){
       const div = document.createElement('div');
       div.className = 'notif-item';
+      const temConta = !!s.nome;
       div.innerHTML = `
         <div class="notif-item-info">
           <strong>${s.nome || 'CPF não cadastrado'}</strong>
           <span>${s.cpf}</span>
           <span>${s.criado_em}</span>
         </div>
-        <button type="button" class="notif-btn-atender" data-id="${s.id}">Marcar como atendido</button>
+        <div class="notif-acoes">
+          ${temConta ? `<button type="button" class="notif-btn-redefinir" data-id="${s.id}">Redefinir senha</button>` : ''}
+          <button type="button" class="notif-btn-atender" data-id="${s.id}">Marcar como atendido</button>
+        </div>
+        ${temConta ? `
+        <div class="notif-redefinir" id="notif-redefinir-${s.id}" style="display:none;">
+          <input type="password" class="notif-nova-senha" id="notif-senha-${s.id}" placeholder="Nova senha (mín. 6 caracteres)">
+          <button type="button" class="notif-btn-confirmar-senha" data-id="${s.id}">Confirmar nova senha</button>
+        </div>` : ''}
       `;
       return div;
     }
@@ -209,6 +356,50 @@
               fetch(`/admin/notificacoes/${botao.dataset.id}/atender`, { method: 'POST' })
                 .then(res => res.json())
                 .then(() => carregarNotificacoes());
+            });
+          });
+
+          notifLista.querySelectorAll('.notif-btn-redefinir').forEach(botao => {
+            botao.addEventListener('click', () => {
+              const campo = document.getElementById(`notif-redefinir-${botao.dataset.id}`);
+              campo.style.display = campo.style.display === 'none' ? 'flex' : 'none';
+            });
+          });
+
+          notifLista.querySelectorAll('.notif-btn-confirmar-senha').forEach(botao => {
+            botao.addEventListener('click', () => {
+              const id = botao.dataset.id;
+              const inputSenha = document.getElementById(`notif-senha-${id}`);
+              const senha = inputSenha.value;
+
+              if(senha.length < 6){
+                mostrarAvisoNotif('A senha precisa ter pelo menos 6 caracteres.');
+                return;
+              }
+
+              botao.disabled = true;
+              botao.textContent = 'Salvando...';
+
+              fetch(`/admin/notificacoes/${id}/redefinir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senha })
+              })
+                .then(res => res.json())
+                .then(resp => {
+                  if(resp.ok){
+                    carregarNotificacoes();
+                  } else {
+                    botao.disabled = false;
+                    botao.textContent = 'Confirmar nova senha';
+                    mostrarAvisoNotif(resp.mensagem || 'Não foi possível redefinir a senha.');
+                  }
+                })
+                .catch(() => {
+                  botao.disabled = false;
+                  botao.textContent = 'Confirmar nova senha';
+                  mostrarAvisoNotif('Erro de conexão ao redefinir a senha.');
+                });
             });
           });
         });
