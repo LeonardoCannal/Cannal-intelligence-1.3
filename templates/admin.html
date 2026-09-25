@@ -14,11 +14,19 @@
   window.carregandoChartFallback = null;
   if (typeof Chart === 'undefined') {
     window.carregandoChartFallback = new Promise(function(resolve){
+      var jaResolveu = false;
+      function resolverUmaVez(valor){
+        if (jaResolveu) return;
+        jaResolveu = true;
+        resolve(valor);
+      }
       var s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
-      s.onload = function(){ resolve(true); };
-      s.onerror = function(){ resolve(false); };
+      s.onload = function(){ resolverUmaVez(true); };
+      s.onerror = function(){ resolverUmaVez(false); };
       document.head.appendChild(s);
+      // Se nem onload nem onerror disparar em 6s (conexão travada), desiste.
+      setTimeout(function(){ resolverUmaVez(false); }, 6000);
     });
   }
 </script>
