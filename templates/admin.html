@@ -10,7 +10,17 @@
 <body>
   <div class="admin-header">
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" style="height:28px;">
-    <div>
+    <div class="admin-header-direita">
+      <div class="notif-wrapper">
+        <button type="button" id="btn-notif" class="btn-notif" aria-label="Notificações">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-badge" id="notif-badge" style="display:none;">0</span>
+        </button>
+        <div class="notif-painel" id="notif-painel">
+          <div class="notif-cabecalho">Solicitações de redefinição de senha</div>
+          <div class="notif-lista" id="notif-lista"></div>
+        </div>
+      </div>
       <a href="{{ url_for('index') }}">Voltar ao Cannal</a>
       &nbsp;&nbsp;·&nbsp;&nbsp;
       <a href="{{ url_for('logout') }}">Sair</a>
@@ -18,6 +28,11 @@
   </div>
 
   <main class="admin-main">
+    <div class="admin-nav">
+      <a href="{{ url_for('admin') }}" class="admin-nav-link ativo">Usuários</a>
+      <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link">Dashboard</a>
+    </div>
+
     <h1>Usuários cadastrados</h1>
     <p>{{ usuarios|length }} pessoa(s) já criaram conta no Cannal.</p>
 
@@ -150,6 +165,68 @@
     modalOverlay.addEventListener('click', (e) => {
       if(e.target === modalOverlay) modalOverlay.classList.remove('aberto');
     });
+
+    // ===== Notificações (esqueci minha senha) =====
+    const btnNotif = document.getElementById('btn-notif');
+    const notifPainel = document.getElementById('notif-painel');
+    const notifBadge = document.getElementById('notif-badge');
+    const notifLista = document.getElementById('notif-lista');
+
+    function criarItemNotif(s){
+      const div = document.createElement('div');
+      div.className = 'notif-item';
+      div.innerHTML = `
+        <div class="notif-item-info">
+          <strong>${s.nome || 'CPF não cadastrado'}</strong>
+          <span>${s.cpf}</span>
+          <span>${s.criado_em}</span>
+        </div>
+        <button type="button" class="notif-btn-atender" data-id="${s.id}">Marcar como atendido</button>
+      `;
+      return div;
+    }
+
+    function carregarNotificacoes(){
+      fetch('/admin/notificacoes')
+        .then(res => res.json())
+        .then(dados => {
+          if(dados.total > 0){
+            notifBadge.style.display = 'flex';
+            notifBadge.textContent = dados.total;
+          } else {
+            notifBadge.style.display = 'none';
+          }
+
+          notifLista.innerHTML = '';
+          if(dados.solicitacoes.length === 0){
+            notifLista.innerHTML = '<div class="notif-vazio">Nenhuma solicitação pendente.</div>';
+          } else {
+            dados.solicitacoes.forEach(s => notifLista.appendChild(criarItemNotif(s)));
+          }
+
+          notifLista.querySelectorAll('.notif-btn-atender').forEach(botao => {
+            botao.addEventListener('click', () => {
+              fetch(`/admin/notificacoes/${botao.dataset.id}/atender`, { method: 'POST' })
+                .then(res => res.json())
+                .then(() => carregarNotificacoes());
+            });
+          });
+        });
+    }
+
+    btnNotif.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notifPainel.classList.toggle('aberto');
+    });
+
+    document.addEventListener('click', (e) => {
+      if(!notifPainel.contains(e.target) && e.target !== btnNotif){
+        notifPainel.classList.remove('aberto');
+      }
+    });
+
+    carregarNotificacoes();
+    setInterval(carregarNotificacoes, 30000);
   </script>
 </body>
 </html>
