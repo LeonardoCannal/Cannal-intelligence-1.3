@@ -547,6 +547,23 @@ def marcar_solicitacao_atendida(solicitacao_id: int) -> bool:
         return cursor.rowcount > 0
 
 
+def buscar_solicitacao_senha_por_id(solicitacao_id: int):
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(_q("SELECT * FROM solicitacoes_senha WHERE id = ?"), (solicitacao_id,))
+        return cursor.fetchone()
+
+
+def definir_senha(usuario_id: int, nova_senha: str) -> bool:
+    """Define uma senha NOVA pro usuário (usado pelo admin ao atender um
+    pedido de redefinição). Nunca lê ou expõe a senha antiga — só troca."""
+    senha_hash = generate_password_hash(nova_senha)
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(_q("UPDATE usuarios SET senha_hash = ? WHERE id = ?"), (senha_hash, usuario_id))
+        return cursor.rowcount > 0
+
+
 # ---------------------------------------------------------------------------
 # Log de buscas (pra estatística do dashboard)
 # ---------------------------------------------------------------------------
@@ -706,4 +723,94 @@ def estatisticas_dashboard():
         "por_estado": por_estado,
         "por_cidade": por_cidade,
         "serie_meses": serie_meses,
+    }
+
+
+def estatisticas_usuario(usuario_id: int):
+    """Mesma ideia do estatisticas_dashboard(), mas só com os números de UM
+    usuário — pro admin abrir o dashboard individual clicando no nome dele."""
+    agora = datetime.utcnow()
+    hoje_str = agora.strftime("%Y-%m-%d")
+    d7_str = (agora - timedelta(days=7)).isoformat()
+    d30_str = (agora - timedelta(days=30)).isoformat()
+    d60_str = (agora - timedelta(days=60)).isoformat()
+
+    inicio_mes_atual = _inicio_do_mes(agora)
+    inicio_mes_anterior = _mes_anterior(agora)
+    inicio_mes_atual_str = inicio_mes_atual.isoformat()
+    inicio_mes_anterior_str = inicio_mes_anterior.isoformat()
+
+    with _conexao() as conn:
+        cursor = conn.cursor()
+
+        def contar(sql, params=()):
+            cursor.execute(_q(sql), params)
+            return cursor.fetchone()["total"]
+
+        def linha_periodo(desde_str):
+            prospectados = contar(
+                """SELECT COUNT(DISTINCT chave_medico) AS total FROM painel_medicos
+                   WHERE usuario_id = ? AND status = 'prospectado' AND adicionado_em >= ?""",
+                (usuario_id, desde_str),
+            )
+            visitados = contar(
+                """SELECT COUNT(*) AS total FROM painel_medicos
+                   WHERE usuario_id = ? AND status = 'visitado' AND visitado_em >= ?""",
+                (usuario_id, desde_str),
+            )
+            return {"prospectados": prospectados, "visitados": visitados}
+
+        tabela_periodos = [
+            {"label": "Hoje", **linha_periodo(hoje_str)},
+            {"label": "7 dias", **linha_periodo(d7_str)},
+            {"label": "30 dias", **linha_periodo(d30_str)},
+            {"label": "60 dias", **linha_periodo(d60_str)},
+        ]
+
+        total_prospectados = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE usuario_id = ? AND status = 'prospectado'", (usuario_id,)
+        )
+        total_visitados = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE usuario_id = ? AND status = 'visitado'", (usuario_id,)
+        )
+
+        visitados_mes_atual = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE usuario_id = ? AND status = 'visitado' AND visitado_em >= ?",
+            (usuario_id, inicio_mes_atual_str),
+        )
+        visitados_mes_anterior = contar(
+            """SELECT COUNT(*) AS total FROM painel_medicos
+               WHERE usuario_id = ? AND status = 'visitado' AND visitado_em >= ? AND visitado_em < ?""",
+            (usuario_id, inicio_mes_anterior_str, inicio_mes_atual_str),
+        )
+        if visitados_mes_anterior > 0:
+            variacao_visitados_pct = round((visitados_mes_atual - visitados_mes_anterior) / visitados_mes_anterior * 100)
+        else:
+            variacao_visitados_pct = 100 if visitados_mes_atual > 0 else 0
+
+        buscas_hoje = contar("SELECT COUNT(*) AS total FROM buscas_log WHERE usuario_id = ? AND criado_em >= ?", (usuario_id, hoje_str))
+        buscas_7d = contar("SELECT COUNT(*) AS total FROM buscas_log WHERE usuario_id = ? AND criado_em >= ?", (usuario_id, d7_str))
+        buscas_30d = contar("SELECT COUNT(*) AS total FROM buscas_log WHERE usuario_id = ? AND criado_em >= ?", (usuario_id, d30_str))
+
+        cursor.execute(_q("""
+            SELECT especialidade, COUNT(*) AS total
+            FROM painel_medicos
+            WHERE usuario_id = ? AND especialidade IS NOT NULL AND especialidade != ''
+            GROUP BY especialidade
+            ORDER BY total DESC
+            LIMIT 8
+        """), (usuario_id,))
+        top_especialidades = [dict(r) for r in cursor.fetchall()]
+
+    return {
+        "total_prospectados": total_prospectados,
+        "total_visitados": total_visitados,
+        "tabela_periodos": tabela_periodos,
+        "visitados_mes_atual": visitados_mes_atual,
+        "visitados_mes_anterior": visitados_mes_anterior,
+        "variacao_visitados_pct": variacao_visitados_pct,
+        "buscas_hoje": buscas_hoje,
+        "buscas_7d": buscas_7d,
+        "buscas_30d": buscas_30d,
+        "top_especialidades": top_especialidades,
     }

@@ -528,6 +528,7 @@
     {% if current_user.is_admin %}
     <a href="{{ url_for('admin') }}" class="nav-link">Painel Admin</a>
     {% endif %}
+    <a href="{{ url_for('perfil') }}" class="nav-link">Meu Perfil</a>
     <a href="{{ url_for('logout') }}" class="nav-link">Sair</a>
   </nav>
 </header>

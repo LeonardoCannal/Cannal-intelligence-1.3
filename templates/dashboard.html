@@ -24,6 +24,8 @@
       </div>
       <a href="{{ url_for('index') }}">Voltar ao Cannal</a>
       &nbsp;&nbsp;·&nbsp;&nbsp;
+      <a href="{{ url_for('perfil') }}">Meu Perfil</a>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
       <a href="{{ url_for('logout') }}">Sair</a>
     </div>
   </div>
@@ -104,6 +106,13 @@
       <div class="canvas-wrapper"><canvas id="grafico-cidades"></canvas></div>
     </div>
   </main>
+
+  <div class="aviso-overlay" id="aviso-overlay-notif">
+    <div class="aviso-card">
+      <p class="aviso-texto-erro" id="aviso-texto-notif"></p>
+      <button type="button" id="aviso-fechar-notif" class="btn-auth">Entendi</button>
+    </div>
+  </div>
 
   <script>
     const dadosMeses = {{ stats.serie_meses | tojson }};
@@ -188,6 +197,17 @@
     });
 
     // ===== Notificações (esqueci minha senha) =====
+    const avisoOverlayNotif = document.getElementById('aviso-overlay-notif');
+    const avisoTextoNotif = document.getElementById('aviso-texto-notif');
+    document.getElementById('aviso-fechar-notif').addEventListener('click', () => avisoOverlayNotif.classList.remove('aberto'));
+    avisoOverlayNotif.addEventListener('click', (e) => {
+      if(e.target === avisoOverlayNotif) avisoOverlayNotif.classList.remove('aberto');
+    });
+    function mostrarAvisoNotif(mensagem){
+      avisoTextoNotif.textContent = mensagem;
+      avisoOverlayNotif.classList.add('aberto');
+    }
+
     const btnNotif = document.getElementById('btn-notif');
     const notifPainel = document.getElementById('notif-painel');
     const notifBadge = document.getElementById('notif-badge');
@@ -196,13 +216,22 @@
     function criarItemNotif(s){
       const div = document.createElement('div');
       div.className = 'notif-item';
+      const temConta = !!s.nome;
       div.innerHTML = `
         <div class="notif-item-info">
           <strong>${s.nome || 'CPF não cadastrado'}</strong>
           <span>${s.cpf}</span>
           <span>${s.criado_em}</span>
         </div>
-        <button type="button" class="notif-btn-atender" data-id="${s.id}">Marcar como atendido</button>
+        <div class="notif-acoes">
+          ${temConta ? `<button type="button" class="notif-btn-redefinir" data-id="${s.id}">Redefinir senha</button>` : ''}
+          <button type="button" class="notif-btn-atender" data-id="${s.id}">Marcar como atendido</button>
+        </div>
+        ${temConta ? `
+        <div class="notif-redefinir" id="notif-redefinir-${s.id}" style="display:none;">
+          <input type="password" class="notif-nova-senha" id="notif-senha-${s.id}" placeholder="Nova senha (mín. 6 caracteres)">
+          <button type="button" class="notif-btn-confirmar-senha" data-id="${s.id}">Confirmar nova senha</button>
+        </div>` : ''}
       `;
       return div;
     }
@@ -230,6 +259,50 @@
               fetch(`/admin/notificacoes/${botao.dataset.id}/atender`, { method: 'POST' })
                 .then(res => res.json())
                 .then(() => carregarNotificacoes());
+            });
+          });
+
+          notifLista.querySelectorAll('.notif-btn-redefinir').forEach(botao => {
+            botao.addEventListener('click', () => {
+              const campo = document.getElementById(`notif-redefinir-${botao.dataset.id}`);
+              campo.style.display = campo.style.display === 'none' ? 'flex' : 'none';
+            });
+          });
+
+          notifLista.querySelectorAll('.notif-btn-confirmar-senha').forEach(botao => {
+            botao.addEventListener('click', () => {
+              const id = botao.dataset.id;
+              const inputSenha = document.getElementById(`notif-senha-${id}`);
+              const senha = inputSenha.value;
+
+              if(senha.length < 6){
+                mostrarAvisoNotif('A senha precisa ter pelo menos 6 caracteres.');
+                return;
+              }
+
+              botao.disabled = true;
+              botao.textContent = 'Salvando...';
+
+              fetch(`/admin/notificacoes/${id}/redefinir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senha })
+              })
+                .then(res => res.json())
+                .then(resp => {
+                  if(resp.ok){
+                    carregarNotificacoes();
+                  } else {
+                    botao.disabled = false;
+                    botao.textContent = 'Confirmar nova senha';
+                    mostrarAvisoNotif(resp.mensagem || 'Não foi possível redefinir a senha.');
+                  }
+                })
+                .catch(() => {
+                  botao.disabled = false;
+                  botao.textContent = 'Confirmar nova senha';
+                  mostrarAvisoNotif('Erro de conexão ao redefinir a senha.');
+                });
             });
           });
         });
