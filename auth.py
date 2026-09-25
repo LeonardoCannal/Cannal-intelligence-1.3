@@ -594,6 +594,34 @@ def _mes_anterior(dt):
     return _inicio_do_mes(primeiro - timedelta(days=1))
 
 
+def estatisticas_ticker():
+    """Números curtos pro "ticker" da tela de busca — bem mais leve que o
+    dashboard completo do admin (só 3 consultas)."""
+    agora = datetime.utcnow()
+    hoje_str = agora.strftime("%Y-%m-%d")
+    inicio_mes_atual_str = _inicio_do_mes(agora).isoformat()
+
+    with _conexao() as conn:
+        cursor = conn.cursor()
+
+        def contar(sql, params=()):
+            cursor.execute(_q(sql), params)
+            return cursor.fetchone()["total"]
+
+        medicos_base = contar("SELECT COUNT(DISTINCT chave_medico) AS total FROM painel_medicos")
+        visitados_mes = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'visitado' AND visitado_em >= ?",
+            (inicio_mes_atual_str,),
+        )
+        buscas_hoje = contar("SELECT COUNT(*) AS total FROM buscas_log WHERE criado_em >= ?", (hoje_str,))
+
+    return {
+        "medicos_base": medicos_base,
+        "visitados_mes": visitados_mes,
+        "buscas_hoje": buscas_hoje,
+    }
+
+
 def estatisticas_dashboard():
     """Junta todos os números do Dashboard do admin numa única consulta ao
     banco (várias queries agregadas, mas uma conexão só)."""

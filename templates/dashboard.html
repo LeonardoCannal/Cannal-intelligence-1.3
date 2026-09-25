@@ -30,16 +30,21 @@
     </div>
   </div>
 
-  <main class="admin-main">
-    <div class="admin-nav">
-      <a href="{{ url_for('admin') }}" class="admin-nav-link">Usuários</a>
-      <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link ativo">Dashboard</a>
+  <div class="hero-secao">
+    <div class="hero-secao-conteudo">
+      <h1>Dashboard</h1>
+      <p>Visão geral do Cannal em números.</p>
     </div>
+  </div>
 
-    <h1>Dashboard</h1>
-    <p>Visão geral do Cannal em números.</p>
+  <main class="admin-main">
+    <div class="card-flutuante">
+      <div class="admin-nav">
+        <a href="{{ url_for('admin') }}" class="admin-nav-link">Usuários</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link ativo">Dashboard</a>
+      </div>
 
-    <div class="stats-grid">
+      <div class="stats-grid" style="margin-bottom:0;">
       <div class="stat-card">
         <span class="stat-label">Médicos prospectados</span>
         <span class="stat-valor">{{ stats.prospectados }}</span>
@@ -65,8 +70,9 @@
         </span>
       </div>
     </div>
+    </div>
 
-    <div class="dashboard-linha">
+    <div class="dashboard-linha" style="margin-top:16px;">
       <div class="card-grafico">
         <h3>Buscas realizadas</h3>
         <div class="mini-stats">
@@ -120,7 +126,13 @@
     const dadosEstados = {{ stats.por_estado | tojson }};
     const dadosCidades = {{ stats.por_cidade | tojson }};
 
-    if (typeof Chart !== 'undefined') {
+    function desenharGraficosPagina(){
+      if (typeof Chart === 'undefined') {
+        const mensagem = '<div class="grafico-vazio">Não foi possível carregar os gráficos (bloqueado pelo navegador). Tente desativar bloqueadores de anúncio/script para esta página.</div>';
+        document.querySelectorAll('.canvas-wrapper').forEach(el => { el.innerHTML = mensagem; });
+        return;
+      }
+
       Chart.defaults.font.family = "'Montserrat', sans-serif";
       Chart.defaults.color = '#343C4C';
 
@@ -141,41 +153,58 @@
         }
       });
 
-      new Chart(document.getElementById('grafico-especialidades'), {
-        type: 'bar',
-        data: {
-          labels: dadosEspecialidades.map(e => e.especialidade),
-          datasets: [{ data: dadosEspecialidades.map(e => e.total), backgroundColor: '#88AD36', borderRadius: 6, maxBarThickness: 22 }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-        }
-      });
+      if (dadosEspecialidades.length === 0) {
+        document.querySelector('.canvas-especialidades').innerHTML = '<div class="grafico-vazio">Ainda não há especialidades suficientes no painel.</div>';
+      } else {
+        new Chart(document.getElementById('grafico-especialidades'), {
+          type: 'bar',
+          data: {
+            labels: dadosEspecialidades.map(e => e.especialidade),
+            datasets: [{ data: dadosEspecialidades.map(e => e.total), backgroundColor: '#88AD36', borderRadius: 6, maxBarThickness: 22 }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
 
-      new Chart(document.getElementById('grafico-cidades'), {
-        type: 'bar',
-        data: {
-          labels: dadosCidades.map(c => c.uf ? `${c.cidade} - ${c.uf}` : c.cidade),
-          datasets: [{ data: dadosCidades.map(c => c.total), backgroundColor: '#343C4C', borderRadius: 6, maxBarThickness: 34 }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-        }
-      });
+      if (dadosCidades.length === 0) {
+        document.getElementById('grafico-cidades').closest('.canvas-wrapper').innerHTML = '<div class="grafico-vazio">Ainda não há cidades suficientes no painel.</div>';
+      } else {
+        new Chart(document.getElementById('grafico-cidades'), {
+          type: 'bar',
+          data: {
+            labels: dadosCidades.map(c => c.uf ? `${c.cidade} - ${c.uf}` : c.cidade),
+            datasets: [{ data: dadosCidades.map(c => c.total), backgroundColor: '#343C4C', borderRadius: 6, maxBarThickness: 34 }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+      }
     }
 
-    if (dadosEspecialidades.length === 0) {
-      document.querySelector('.canvas-especialidades').innerHTML = '<div class="grafico-vazio">Ainda não há especialidades suficientes no painel.</div>';
-    }
-    if (dadosCidades.length === 0) {
-      document.getElementById('grafico-cidades').closest('.canvas-wrapper').innerHTML = '<div class="grafico-vazio">Ainda não há cidades suficientes no painel.</div>';
+    // Alguns bloqueadores (ex: Brave Shields) bloqueiam o cdnjs. Se o
+    // Chart.js não carregou por essa via, tenta uma segunda fonte (jsDelivr)
+    // antes de mostrar a mensagem de "bloqueado".
+    if (typeof Chart !== 'undefined') {
+      desenharGraficosPagina();
+    } else {
+      document.querySelectorAll('.canvas-wrapper').forEach(el => {
+        el.innerHTML = '<div class="grafico-vazio">Carregando gráficos...</div>';
+      });
+      const scriptFallback = document.createElement('script');
+      scriptFallback.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+      scriptFallback.onload = desenharGraficosPagina;
+      scriptFallback.onerror = desenharGraficosPagina;
+      document.head.appendChild(scriptFallback);
     }
 
     // ===== Mapa de calor por estado =====

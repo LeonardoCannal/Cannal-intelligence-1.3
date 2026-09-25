@@ -36,6 +36,7 @@ from auth import (
     registrar_busca,
     estatisticas_dashboard,
     estatisticas_usuario,
+    estatisticas_ticker,
 )
 import webbrowser
 import threading
@@ -400,10 +401,16 @@ def admin_dashboard():
 @app.route("/")
 @login_required
 def index():
+    ticker = estatisticas_ticker()
     return render_template(
         "index.html",
         especialidades=NOMES_ESPECIALIDADES,
         max_especialidades=MAX_ESPECIALIDADES_POR_BUSCA,
+        ticker={
+            "medicos_base": f"{ticker['medicos_base']:,}".replace(",", "."),
+            "visitados_mes": f"{ticker['visitados_mes']:,}".replace(",", "."),
+            "buscas_hoje": f"{ticker['buscas_hoje']:,}".replace(",", "."),
+        },
     )
 
 
