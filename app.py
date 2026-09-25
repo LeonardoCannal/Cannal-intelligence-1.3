@@ -27,6 +27,12 @@ from auth import (
     mover_no_painel,
     listar_painel_usuario,
     chaves_no_painel_usuario,
+    registrar_solicitacao_senha,
+    listar_solicitacoes_senha_pendentes,
+    contar_solicitacoes_senha_pendentes,
+    marcar_solicitacao_atendida,
+    registrar_busca,
+    estatisticas_dashboard,
 )
 import webbrowser
 import threading
@@ -180,6 +186,14 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/api/esqueci-senha", methods=["POST"])
+def api_esqueci_senha():
+    dados = request.get_json(force=True) or {}
+    cpf = dados.get("cpf", "")
+    registrar_solicitacao_senha(cpf)
+    return jsonify({"ok": True})
+
+
 @app.route("/admin")
 @admin_required
 def admin():
@@ -279,6 +293,47 @@ def admin_painel_usuario(user_id):
     })
 
 
+def _formatar_data_notificacao(valor_iso):
+    if not valor_iso:
+        return ""
+    try:
+        return datetime.fromisoformat(valor_iso).strftime("%d/%m/%Y %H:%M")
+    except ValueError:
+        return valor_iso
+
+
+@app.route("/admin/notificacoes")
+@admin_required
+def admin_notificacoes():
+    pendentes = listar_solicitacoes_senha_pendentes()
+    return jsonify({
+        "total": len(pendentes),
+        "solicitacoes": [
+            {
+                "id": s["id"],
+                "cpf": formatar_cpf(s["cpf"]),
+                "nome": s["nome"],
+                "email": s["email"],
+                "criado_em": _formatar_data_notificacao(s["criado_em"]),
+            }
+            for s in pendentes
+        ],
+    })
+
+
+@app.route("/admin/notificacoes/<int:solicitacao_id>/atender", methods=["POST"])
+@admin_required
+def admin_notificacao_atender(solicitacao_id):
+    ok = marcar_solicitacao_atendida(solicitacao_id)
+    return jsonify({"ok": ok})
+
+
+@app.route("/admin/dashboard")
+@admin_required
+def admin_dashboard():
+    return render_template("dashboard.html", stats=estatisticas_dashboard())
+
+
 @app.route("/")
 @login_required
 def index():
@@ -305,6 +360,9 @@ def api_buscar():
             return jsonify({"erro": f"Especialidade inválida: {slug}"}), 400
     if not cidade.strip():
         return jsonify({"erro": "Informe a cidade."}), 400
+
+    usuario = usuario_logado()
+    registrar_busca(usuario["id"])
 
     nomes_especialidades = [ESPECIALIDADES[slug]["nome"] for slug in especialidades_selecionadas]
     rotulo_especialidades = ", ".join(nomes_especialidades)
@@ -361,7 +419,6 @@ def api_buscar():
 
     # Marca quais médicos já estão no painel do usuário logado, pra
     # mostrar "Presente no painel médico" em vez do botão de adicionar.
-    usuario = usuario_logado()
     chaves_do_painel = chaves_no_painel_usuario(usuario["id"])
     for medico in todos_medicos:
         medico["no_painel"] = computar_chave_medico(medico) in chaves_do_painel

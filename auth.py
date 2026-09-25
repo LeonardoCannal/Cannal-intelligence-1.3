@@ -34,7 +34,7 @@ import re
 import sqlite3
 from contextlib import contextmanager
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import session, redirect, url_for, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -89,6 +89,23 @@ def inicializar_auth(app, sqlite_path):
                 UNIQUE(usuario_id, chave_medico)
             )
         """
+        sql_buscas_log = """
+            CREATE TABLE IF NOT EXISTS buscas_log (
+                id SERIAL PRIMARY KEY,
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+                criado_em TEXT NOT NULL
+            )
+        """
+        sql_solicitacoes_senha = """
+            CREATE TABLE IF NOT EXISTS solicitacoes_senha (
+                id SERIAL PRIMARY KEY,
+                cpf TEXT NOT NULL,
+                nome TEXT,
+                email TEXT,
+                atendido BOOLEAN NOT NULL DEFAULT FALSE,
+                criado_em TEXT NOT NULL
+            )
+        """
     else:
         sql_usuarios = """
             CREATE TABLE IF NOT EXISTS usuarios (
@@ -119,11 +136,34 @@ def inicializar_auth(app, sqlite_path):
                 UNIQUE(usuario_id, chave_medico)
             )
         """
+        sql_buscas_log = """
+            CREATE TABLE IF NOT EXISTS buscas_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+                criado_em TEXT NOT NULL
+            )
+        """
+        sql_solicitacoes_senha = """
+            CREATE TABLE IF NOT EXISTS solicitacoes_senha (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cpf TEXT NOT NULL,
+                nome TEXT,
+                email TEXT,
+                atendido INTEGER NOT NULL DEFAULT 0,
+                criado_em TEXT NOT NULL
+            )
+        """
 
     with _conexao() as conn:
         cursor = conn.cursor()
         cursor.execute(sql_usuarios)
         cursor.execute(sql_painel)
+        cursor.execute(sql_buscas_log)
+        cursor.execute(sql_solicitacoes_senha)
+
+    # Bancos criados antes dessa versão não têm essa coluna — adiciona sem
+    # quebrar se ela já existir (mesmo problema que já pegou o "cpf" antes).
+    _adicionar_coluna_se_faltar("painel_medicos", "visitado_em", "TEXT")
 
     @app.context_processor
     def injetar_usuario_logado():
@@ -143,6 +183,24 @@ def _get_conn_bruta():
     conn = sqlite3.connect(_SQLITE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _adicionar_coluna_se_faltar(tabela: str, coluna: str, tipo_sql: str):
+    """
+    Adiciona uma coluna nova numa tabela que pode já existir de uma versão
+    anterior do banco (sem essa coluna). Roda numa conexão própria e
+    ignora silenciosamente o erro de "coluna já existe" — assim, se a
+    coluna já foi criada, não quebra nada.
+    """
+    conn = _get_conn_bruta()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo_sql}")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
 
 
 @contextmanager
@@ -379,10 +437,17 @@ def mover_no_painel(usuario_id: int, entrada_id: int, novo_status: str) -> bool:
         return False
     with _conexao() as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            _q("UPDATE painel_medicos SET status = ? WHERE id = ? AND usuario_id = ?"),
-            (novo_status, entrada_id, usuario_id),
-        )
+        if novo_status == "visitado":
+            agora = datetime.utcnow().isoformat()
+            cursor.execute(
+                _q("UPDATE painel_medicos SET status = ?, visitado_em = ? WHERE id = ? AND usuario_id = ?"),
+                (novo_status, agora, entrada_id, usuario_id),
+            )
+        else:
+            cursor.execute(
+                _q("UPDATE painel_medicos SET status = ?, visitado_em = NULL WHERE id = ? AND usuario_id = ?"),
+                (novo_status, entrada_id, usuario_id),
+            )
         return cursor.rowcount > 0
 
 
@@ -419,3 +484,226 @@ def listar_usuarios_com_contagem_painel():
             ORDER BY u.criado_em DESC
         """)
         return cursor.fetchall()
+
+
+# ---------------------------------------------------------------------------
+# "Esqueci minha senha" — vira notificação pro admin, sem envio automático
+# ---------------------------------------------------------------------------
+
+_ATENDIDO = True if USANDO_POSTGRES else 1
+_NAO_ATENDIDO = False if USANDO_POSTGRES else 0
+
+
+def registrar_solicitacao_senha(cpf: str):
+    """Registra o pedido de redefinição de senha pra aparecer como
+    notificação no painel admin. Tenta casar com um usuário existente
+    pelo CPF pra já trazer nome/e-mail junto."""
+    cpf_limpo = limpar_cpf(cpf)
+    usuario = buscar_usuario_por_cpf(cpf_limpo) if cpf_limpo else None
+    agora = datetime.utcnow().isoformat()
+
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("""INSERT INTO solicitacoes_senha (cpf, nome, email, atendido, criado_em)
+                  VALUES (?, ?, ?, ?, ?)"""),
+            (
+                cpf_limpo,
+                usuario["nome"] if usuario else None,
+                usuario["email"] if usuario else None,
+                _NAO_ATENDIDO,
+                agora,
+            ),
+        )
+
+
+def listar_solicitacoes_senha_pendentes():
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("SELECT * FROM solicitacoes_senha WHERE atendido = ? ORDER BY criado_em DESC"),
+            (_NAO_ATENDIDO,),
+        )
+        return cursor.fetchall()
+
+
+def contar_solicitacoes_senha_pendentes() -> int:
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("SELECT COUNT(*) AS total FROM solicitacoes_senha WHERE atendido = ?"),
+            (_NAO_ATENDIDO,),
+        )
+        return cursor.fetchone()["total"]
+
+
+def marcar_solicitacao_atendida(solicitacao_id: int) -> bool:
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("UPDATE solicitacoes_senha SET atendido = ? WHERE id = ?"),
+            (_ATENDIDO, solicitacao_id),
+        )
+        return cursor.rowcount > 0
+
+
+# ---------------------------------------------------------------------------
+# Log de buscas (pra estatística do dashboard)
+# ---------------------------------------------------------------------------
+
+def registrar_busca(usuario_id: int):
+    agora = datetime.utcnow().isoformat()
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("INSERT INTO buscas_log (usuario_id, criado_em) VALUES (?, ?)"),
+            (usuario_id, agora),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Dashboard do admin
+# ---------------------------------------------------------------------------
+
+_MESES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+
+
+def _inicio_do_mes(dt):
+    return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def _mes_anterior(dt):
+    primeiro = _inicio_do_mes(dt)
+    return _inicio_do_mes(primeiro - timedelta(days=1))
+
+
+def estatisticas_dashboard():
+    """Junta todos os números do Dashboard do admin numa única consulta ao
+    banco (várias queries agregadas, mas uma conexão só)."""
+    agora = datetime.utcnow()
+    hoje_str = agora.strftime("%Y-%m-%d")
+    d7_str = (agora - timedelta(days=7)).isoformat()
+    d30_str = (agora - timedelta(days=30)).isoformat()
+
+    inicio_mes_atual = _inicio_do_mes(agora)
+    inicio_mes_anterior = _mes_anterior(agora)
+    inicio_mes_atual_str = inicio_mes_atual.isoformat()
+    inicio_mes_anterior_str = inicio_mes_anterior.isoformat()
+
+    # limites dos últimos 6 meses (do mais antigo pro atual)
+    inicios_meses = [inicio_mes_atual]
+    cursor_mes = inicio_mes_atual
+    for _ in range(5):
+        cursor_mes = _mes_anterior(cursor_mes)
+        inicios_meses.append(cursor_mes)
+    inicios_meses.reverse()
+    fins_meses = inicios_meses[1:] + [agora]
+
+    with _conexao() as conn:
+        cursor = conn.cursor()
+
+        def contar(sql, params=()):
+            cursor.execute(_q(sql), params)
+            return cursor.fetchone()["total"]
+
+        prospectados = contar("SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'prospectado'")
+        visitados = contar("SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'visitado'")
+        usuarios_total = contar("SELECT COUNT(*) AS total FROM usuarios")
+
+        medicos_base = contar("SELECT COUNT(DISTINCT chave_medico) AS total FROM painel_medicos")
+        medicos_semana = contar(
+            "SELECT COUNT(DISTINCT chave_medico) AS total FROM painel_medicos WHERE adicionado_em >= ?", (d7_str,)
+        )
+        medicos_mes = contar(
+            "SELECT COUNT(DISTINCT chave_medico) AS total FROM painel_medicos WHERE adicionado_em >= ?", (d30_str,)
+        )
+
+        visitados_mes_atual = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'visitado' AND visitado_em >= ?",
+            (inicio_mes_atual_str,),
+        )
+        visitados_mes_anterior = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'visitado' AND visitado_em >= ? AND visitado_em < ?",
+            (inicio_mes_anterior_str, inicio_mes_atual_str),
+        )
+        if visitados_mes_anterior > 0:
+            variacao_visitados_pct = round((visitados_mes_atual - visitados_mes_anterior) / visitados_mes_anterior * 100)
+        else:
+            variacao_visitados_pct = 100 if visitados_mes_atual > 0 else 0
+
+        buscas_hoje = contar("SELECT COUNT(*) AS total FROM buscas_log WHERE criado_em >= ?", (hoje_str,))
+        buscas_7d = contar("SELECT COUNT(*) AS total FROM buscas_log WHERE criado_em >= ?", (d7_str,))
+        buscas_30d = contar("SELECT COUNT(*) AS total FROM buscas_log WHERE criado_em >= ?", (d30_str,))
+
+        ativos_hoje = contar("SELECT COUNT(*) AS total FROM usuarios WHERE ultimo_login >= ?", (hoje_str,))
+        ativos_7d = contar("SELECT COUNT(*) AS total FROM usuarios WHERE ultimo_login >= ?", (d7_str,))
+        ativos_30d = contar("SELECT COUNT(*) AS total FROM usuarios WHERE ultimo_login >= ?", (d30_str,))
+
+        cursor.execute(_q("""
+            SELECT especialidade, COUNT(*) AS total
+            FROM painel_medicos
+            WHERE especialidade IS NOT NULL AND especialidade != ''
+            GROUP BY especialidade
+            ORDER BY total DESC
+            LIMIT 8
+        """))
+        top_especialidades = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute(_q("""
+            SELECT uf, COUNT(*) AS total
+            FROM painel_medicos
+            WHERE uf IS NOT NULL AND uf != ''
+            GROUP BY uf
+            ORDER BY total DESC
+        """))
+        por_estado = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute(_q("""
+            SELECT cidade, uf, COUNT(*) AS total
+            FROM painel_medicos
+            WHERE cidade IS NOT NULL AND cidade != ''
+            GROUP BY cidade, uf
+            ORDER BY total DESC
+            LIMIT 10
+        """))
+        por_cidade = [dict(r) for r in cursor.fetchall()]
+
+        serie_meses = []
+        for inicio, fim in zip(inicios_meses, fins_meses):
+            inicio_str = inicio.isoformat()
+            fim_str = fim.isoformat()
+            novos = contar(
+                "SELECT COUNT(DISTINCT chave_medico) AS total FROM painel_medicos WHERE adicionado_em >= ? AND adicionado_em < ?",
+                (inicio_str, fim_str),
+            )
+            visitados_no_mes = contar(
+                "SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'visitado' AND visitado_em >= ? AND visitado_em < ?",
+                (inicio_str, fim_str),
+            )
+            serie_meses.append({
+                "label": f"{_MESES_ABREV[inicio.month - 1]}/{str(inicio.year)[2:]}",
+                "novos": novos,
+                "visitados": visitados_no_mes,
+            })
+
+    return {
+        "prospectados": prospectados,
+        "visitados": visitados,
+        "usuarios_total": usuarios_total,
+        "medicos_base": medicos_base,
+        "medicos_semana": medicos_semana,
+        "medicos_mes": medicos_mes,
+        "visitados_mes_atual": visitados_mes_atual,
+        "visitados_mes_anterior": visitados_mes_anterior,
+        "variacao_visitados_pct": variacao_visitados_pct,
+        "buscas_hoje": buscas_hoje,
+        "buscas_7d": buscas_7d,
+        "buscas_30d": buscas_30d,
+        "ativos_hoje": ativos_hoje,
+        "ativos_7d": ativos_7d,
+        "ativos_30d": ativos_30d,
+        "top_especialidades": top_especialidades,
+        "por_estado": por_estado,
+        "por_cidade": por_cidade,
+        "serie_meses": serie_meses,
+    }

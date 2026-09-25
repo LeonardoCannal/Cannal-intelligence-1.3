@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cannal · Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="admin-header">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" style="height:28px;">
+    <div class="admin-header-direita">
+      <div class="notif-wrapper">
+        <button type="button" id="btn-notif" class="btn-notif" aria-label="Notificações">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-badge" id="notif-badge" style="display:none;">0</span>
+        </button>
+        <div class="notif-painel" id="notif-painel">
+          <div class="notif-cabecalho">Solicitações de redefinição de senha</div>
+          <div class="notif-lista" id="notif-lista"></div>
+        </div>
+      </div>
+      <a href="{{ url_for('index') }}">Voltar ao Cannal</a>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <a href="{{ url_for('logout') }}">Sair</a>
+    </div>
+  </div>
+
+  <main class="admin-main">
+    <div class="admin-nav">
+      <a href="{{ url_for('admin') }}" class="admin-nav-link">Usuários</a>
+      <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link ativo">Dashboard</a>
+    </div>
+
+    <h1>Dashboard</h1>
+    <p>Visão geral do Cannal em números.</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Médicos prospectados</span>
+        <span class="stat-valor">{{ stats.prospectados }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Médicos visitados</span>
+        <span class="stat-valor">{{ stats.visitados }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Usuários cadastrados</span>
+        <span class="stat-valor">{{ stats.usuarios_total }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Médicos na base</span>
+        <span class="stat-valor">{{ stats.medicos_base }}</span>
+        <span class="stat-extra">+{{ stats.medicos_semana }} na semana · +{{ stats.medicos_mes }} no mês</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Visitados este mês</span>
+        <span class="stat-valor">{{ stats.visitados_mes_atual }}</span>
+        <span class="stat-extra {{ 'stat-alta' if stats.variacao_visitados_pct >= 0 else 'stat-baixa' }}">
+          {{ '↑' if stats.variacao_visitados_pct >= 0 else '↓' }} {{ stats.variacao_visitados_pct|abs }}% vs mês anterior
+        </span>
+      </div>
+    </div>
+
+    <div class="dashboard-linha">
+      <div class="card-grafico">
+        <h3>Buscas realizadas</h3>
+        <div class="mini-stats">
+          <div class="mini-stat"><span class="mini-valor">{{ stats.buscas_hoje }}</span><span class="mini-label">Hoje</span></div>
+          <div class="mini-stat"><span class="mini-valor">{{ stats.buscas_7d }}</span><span class="mini-label">7 dias</span></div>
+          <div class="mini-stat"><span class="mini-valor">{{ stats.buscas_30d }}</span><span class="mini-label">30 dias</span></div>
+        </div>
+      </div>
+      <div class="card-grafico">
+        <h3>Usuários ativos</h3>
+        <div class="mini-stats">
+          <div class="mini-stat"><span class="mini-valor">{{ stats.ativos_hoje }}</span><span class="mini-label">Hoje</span></div>
+          <div class="mini-stat"><span class="mini-valor">{{ stats.ativos_7d }}</span><span class="mini-label">7 dias</span></div>
+          <div class="mini-stat"><span class="mini-valor">{{ stats.ativos_30d }}</span><span class="mini-label">30 dias</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grafico">
+      <h3>Médicos incluídos × visitados (últimos 6 meses)</h3>
+      <div class="canvas-wrapper"><canvas id="grafico-meses"></canvas></div>
+    </div>
+
+    <div class="dashboard-linha">
+      <div class="card-grafico">
+        <h3>Top especialidades no painel</h3>
+        <div class="canvas-wrapper canvas-especialidades"><canvas id="grafico-especialidades"></canvas></div>
+      </div>
+      <div class="card-grafico">
+        <h3>Mapa de calor por estado (UF)</h3>
+        <div class="heatmap-uf" id="heatmap-uf"></div>
+      </div>
+    </div>
+
+    <div class="card-grafico">
+      <h3>Top cidades no painel</h3>
+      <div class="canvas-wrapper"><canvas id="grafico-cidades"></canvas></div>
+    </div>
+  </main>
+
+  <script>
+    const dadosMeses = {{ stats.serie_meses | tojson }};
+    const dadosEspecialidades = {{ stats.top_especialidades | tojson }};
+    const dadosEstados = {{ stats.por_estado | tojson }};
+    const dadosCidades = {{ stats.por_cidade | tojson }};
+
+    if (typeof Chart !== 'undefined') {
+      Chart.defaults.font.family = "'Montserrat', sans-serif";
+      Chart.defaults.color = '#343C4C';
+
+      new Chart(document.getElementById('grafico-meses'), {
+        type: 'bar',
+        data: {
+          labels: dadosMeses.map(m => m.label),
+          datasets: [
+            { label: 'Incluídos', data: dadosMeses.map(m => m.novos), backgroundColor: '#88AD36', borderRadius: 6, maxBarThickness: 34 },
+            { label: 'Visitados', data: dadosMeses.map(m => m.visitados), backgroundColor: '#343C4C', borderRadius: 6, maxBarThickness: 34 },
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+
+      new Chart(document.getElementById('grafico-especialidades'), {
+        type: 'bar',
+        data: {
+          labels: dadosEspecialidades.map(e => e.especialidade),
+          datasets: [{ data: dadosEspecialidades.map(e => e.total), backgroundColor: '#88AD36', borderRadius: 6, maxBarThickness: 22 }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+
+      new Chart(document.getElementById('grafico-cidades'), {
+        type: 'bar',
+        data: {
+          labels: dadosCidades.map(c => c.uf ? `${c.cidade} - ${c.uf}` : c.cidade),
+          datasets: [{ data: dadosCidades.map(c => c.total), backgroundColor: '#343C4C', borderRadius: 6, maxBarThickness: 34 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+    }
+
+    if (dadosEspecialidades.length === 0) {
+      document.querySelector('.canvas-especialidades').innerHTML = '<div class="grafico-vazio">Ainda não há especialidades suficientes no painel.</div>';
+    }
+    if (dadosCidades.length === 0) {
+      document.getElementById('grafico-cidades').closest('.canvas-wrapper').innerHTML = '<div class="grafico-vazio">Ainda não há cidades suficientes no painel.</div>';
+    }
+
+    // ===== Mapa de calor por estado =====
+    const ufsBrasil = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+    const mapaContagem = {};
+    dadosEstados.forEach(e => { mapaContagem[e.uf] = e.total; });
+    const maxContagem = Math.max(1, ...Object.values(mapaContagem));
+
+    const heatmapEl = document.getElementById('heatmap-uf');
+    ufsBrasil.forEach(uf => {
+      const total = mapaContagem[uf] || 0;
+      const intensidade = total / maxContagem;
+      const celula = document.createElement('div');
+      celula.className = 'heatmap-celula';
+      celula.style.background = total === 0 ? '#EFEFEF' : `rgba(136, 173, 54, ${0.18 + intensidade * 0.82})`;
+      celula.style.color = intensidade > 0.5 ? '#fff' : '#343C4C';
+      celula.innerHTML = `<strong>${uf}</strong><span>${total}</span>`;
+      heatmapEl.appendChild(celula);
+    });
+
+    // ===== Notificações (esqueci minha senha) =====
+    const btnNotif = document.getElementById('btn-notif');
+    const notifPainel = document.getElementById('notif-painel');
+    const notifBadge = document.getElementById('notif-badge');
+    const notifLista = document.getElementById('notif-lista');
+
+    function criarItemNotif(s){
+      const div = document.createElement('div');
+      div.className = 'notif-item';
+      div.innerHTML = `
+        <div class="notif-item-info">
+          <strong>${s.nome || 'CPF não cadastrado'}</strong>
+          <span>${s.cpf}</span>
+          <span>${s.criado_em}</span>
+        </div>
+        <button type="button" class="notif-btn-atender" data-id="${s.id}">Marcar como atendido</button>
+      `;
+      return div;
+    }
+
+    function carregarNotificacoes(){
+      fetch('/admin/notificacoes')
+        .then(res => res.json())
+        .then(dados => {
+          if(dados.total > 0){
+            notifBadge.style.display = 'flex';
+            notifBadge.textContent = dados.total;
+          } else {
+            notifBadge.style.display = 'none';
+          }
+
+          notifLista.innerHTML = '';
+          if(dados.solicitacoes.length === 0){
+            notifLista.innerHTML = '<div class="notif-vazio">Nenhuma solicitação pendente.</div>';
+          } else {
+            dados.solicitacoes.forEach(s => notifLista.appendChild(criarItemNotif(s)));
+          }
+
+          notifLista.querySelectorAll('.notif-btn-atender').forEach(botao => {
+            botao.addEventListener('click', () => {
+              fetch(`/admin/notificacoes/${botao.dataset.id}/atender`, { method: 'POST' })
+                .then(res => res.json())
+                .then(() => carregarNotificacoes());
+            });
+          });
+        });
+    }
+
+    btnNotif.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notifPainel.classList.toggle('aberto');
+    });
+
+    document.addEventListener('click', (e) => {
+      if(!notifPainel.contains(e.target) && e.target !== btnNotif){
+        notifPainel.classList.remove('aberto');
+      }
+    });
+
+    carregarNotificacoes();
+    setInterval(carregarNotificacoes, 30000);
+  </script>
+</body>
+</html>

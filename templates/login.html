@@ -33,7 +33,24 @@
         <button type="submit" class="btn-auth">Entrar</button>
       </form>
 
+      <div class="auth-link"><a href="#" id="link-esqueci-senha">Esqueci minha senha</a></div>
       <div class="auth-link">Ainda não tem conta? <a href="{{ url_for('cadastro') }}">Cadastre-se</a></div>
+    </div>
+  </div>
+
+  <div class="aviso-overlay" id="esqueci-overlay">
+    <div class="aviso-card" id="esqueci-card-pedido">
+      <p class="aviso-titulo">Esqueci minha senha</p>
+      <div class="campo" style="text-align:left;">
+        <label for="esqueci-cpf">Confirme seu CPF</label>
+        <input type="text" id="esqueci-cpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric">
+      </div>
+      <button type="button" id="esqueci-btn-enviar" class="btn-auth">Solicitar redefinição</button>
+      <button type="button" id="esqueci-btn-cancelar" class="aviso-btn-cancelar">Cancelar</button>
+    </div>
+    <div class="aviso-card" id="esqueci-card-confirmacao" style="display:none;">
+      <p class="aviso-texto-sucesso">Em breve nossa equipe técnica irá entrar em contato com você.</p>
+      <button type="button" id="esqueci-btn-fechar" class="btn-auth">Entendi</button>
     </div>
   </div>
 
@@ -54,6 +71,61 @@
         botao.classList.toggle('ativo', !mostrando);
         botao.setAttribute('aria-label', mostrando ? 'Mostrar senha' : 'Ocultar senha');
       });
+    });
+
+    // ===== Esqueci minha senha =====
+    const esqueciOverlay = document.getElementById('esqueci-overlay');
+    const esqueciCardPedido = document.getElementById('esqueci-card-pedido');
+    const esqueciCardConfirmacao = document.getElementById('esqueci-card-confirmacao');
+    const esqueciCpf = document.getElementById('esqueci-cpf');
+    const esqueciBtnEnviar = document.getElementById('esqueci-btn-enviar');
+
+    function mascararCpf(input){
+      input.addEventListener('input', function(e){
+        let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        e.target.value = v;
+      });
+    }
+    mascararCpf(esqueciCpf);
+
+    document.getElementById('link-esqueci-senha').addEventListener('click', function(e){
+      e.preventDefault();
+      esqueciCardPedido.style.display = 'block';
+      esqueciCardConfirmacao.style.display = 'none';
+      esqueciCpf.value = document.getElementById('cpf').value || '';
+      esqueciOverlay.classList.add('aberto');
+    });
+
+    document.getElementById('esqueci-btn-cancelar').addEventListener('click', function(){
+      esqueciOverlay.classList.remove('aberto');
+    });
+
+    document.getElementById('esqueci-btn-fechar').addEventListener('click', function(){
+      esqueciOverlay.classList.remove('aberto');
+    });
+
+    esqueciBtnEnviar.addEventListener('click', function(){
+      esqueciBtnEnviar.disabled = true;
+      esqueciBtnEnviar.textContent = 'Enviando...';
+      fetch('/api/esqueci-senha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cpf: esqueciCpf.value })
+      })
+        .then(res => res.json())
+        .then(() => {
+          esqueciBtnEnviar.disabled = false;
+          esqueciBtnEnviar.textContent = 'Solicitar redefinição';
+          esqueciCardPedido.style.display = 'none';
+          esqueciCardConfirmacao.style.display = 'block';
+        })
+        .catch(() => {
+          esqueciBtnEnviar.disabled = false;
+          esqueciBtnEnviar.textContent = 'Solicitar redefinição';
+        });
     });
   </script>
 </body>
