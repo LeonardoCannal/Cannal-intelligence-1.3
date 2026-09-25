@@ -10,52 +10,74 @@
   :root{
     --roxo: #88AD36;
     --roxo-escuro: #343C4C;
-    --fundo: #D9D9D9;
+    --roxo-suave: #E9F0DA;
+    --fundo: #F6F7F2;
     --fundo-card: #FFFFFF;
-    --texto: #343C4C;
-    --texto-suave: #9C9D9D;
-    --borda: #D9D9D9;
+    --texto: #232935;
+    --texto-suave: #7A8175;
+    --borda: #E7EADF;
+    --marinho-profundo: #171B22;
   }
   *{ box-sizing: border-box; }
   body{ margin:0; font-family:'Montserrat',sans-serif; background:var(--fundo); color:var(--texto); }
 
   h1,h2,h3,.brand{ font-family:'Montserrat',sans-serif; }
 
-  header{ background:var(--roxo-escuro); color:#fff; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  header{ background:var(--marinho-profundo); color:#fff; padding:20px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
   .brand{ display:flex; align-items:center; }
-  .logo-completo{ height:34px; width:auto; display:block; }
+  .logo-completo{ height:32px; width:auto; display:block; }
 
-  nav{ display:flex; gap:4px; background:rgba(255,255,255,.08); padding:4px; border-radius:10px; align-items:center; flex-wrap:wrap; }
-  .nav-link{ color:rgba(255,255,255,.8); text-decoration:none; padding:8px 18px; font-size:14px; font-weight:500; border-radius:8px; }
+  nav{ display:flex; gap:4px; background:rgba(255,255,255,.07); padding:4px; border-radius:999px; align-items:center; flex-wrap:wrap; }
+  .nav-link{ color:rgba(255,255,255,.72); text-decoration:none; padding:9px 19px; font-size:14px; font-weight:500; border-radius:999px; }
   .nav-link:hover{ color:#fff; }
   .nav-link.ativo{ background:var(--roxo); color:#fff; }
 
   .sub-header{ background:var(--roxo); color:#fff; padding:10px 32px; font-size:13px; text-align:center; }
 
-  main{ max-width:720px; margin:0 auto; padding:48px 24px 80px; }
-  .hero h1{ font-size:30px; font-weight:700; margin:0 0 6px; color:var(--roxo-escuro); }
-  .hero p{ color:var(--texto-suave); font-size:15px; margin:0 0 28px; }
+  main{ max-width:720px; margin:0 auto; padding:0 24px 80px; }
+
+  .hero{
+    background:var(--marinho-profundo);
+    border-radius:24px;
+    padding:36px 32px 76px;
+    margin:32px 0 -48px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:
+      radial-gradient(circle at 88% 24%, rgba(136,173,54,.5) 0, rgba(136,173,54,.5) 3px, transparent 4px),
+      radial-gradient(circle at 78% 58%, rgba(168,204,90,.4) 0, rgba(168,204,90,.4) 2.5px, transparent 3.5px);
+    pointer-events:none;
+  }
+  .hero h1{ position:relative; font-size:27px; font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; color:#fff; }
+  .hero p{ position:relative; color:rgba(255,255,255,.62); font-size:14.5px; line-height:1.6; margin:0; }
+
+  .card-flutuante{ position:relative; z-index:2; }
 
   .card{
     background:var(--fundo-card);
     border:1px solid var(--borda);
     border-radius:16px;
-    padding:24px;
-    box-shadow:0 8px 24px rgba(52,60,76,.08);
+    padding:26px;
+    box-shadow:0 1px 2px rgba(23,27,34,.05), 0 18px 36px rgba(23,27,34,.07);
     margin-bottom:24px;
   }
 
-  .card h2{ font-size:16px; margin:0 0 18px; color:var(--roxo-escuro); }
+  .card h2{ font-size:16px; font-weight:700; margin:0 0 18px; color:var(--roxo-escuro); }
 
-  .dados-lista{ display:flex; flex-direction:column; gap:14px; }
-  .dados-item{ display:flex; flex-direction:column; gap:2px; }
+  .dados-lista{ display:flex; flex-direction:column; gap:15px; }
+  .dados-item{ display:flex; flex-direction:column; gap:3px; }
   .dados-item span.rotulo{ font-size:12px; font-weight:600; color:var(--texto-suave); }
-  .dados-item span.valor{ font-size:14.5px; color:var(--texto); }
+  .dados-item span.valor{ font-size:14.5px; color:var(--texto); font-weight:500; }
 
   .campo{ margin-bottom:16px; }
-  .campo label{ display:block; font-size:13px; font-weight:600; color:var(--texto); margin-bottom:6px; }
-  .campo input{ width:100%; padding:12px 14px; border:1.5px solid var(--borda); border-radius:10px; font-family:'Montserrat',sans-serif; font-size:14px; color:var(--texto); background:#fff; outline:none; transition:border-color .15s ease; }
-  .campo input:focus{ border-color:var(--roxo); }
+  .campo label{ display:block; font-size:13px; font-weight:600; color:var(--texto); margin-bottom:7px; }
+  .campo input{ width:100%; padding:13px 15px; border:1.5px solid var(--borda); border-radius:12px; font-family:'Montserrat',sans-serif; font-size:14px; color:var(--texto); background:var(--fundo); outline:none; transition:border-color .15s ease, background .15s ease, box-shadow .15s ease; }
+  .campo input:focus{ border-color:var(--roxo); background:#fff; box-shadow:0 0 0 4px var(--roxo-suave); }
 
   .campo-senha-wrapper{ position:relative; }
   .campo-senha-wrapper input{ padding-right:42px; }
@@ -73,34 +95,35 @@
 
   .btn-salvar{
     width:100%;
-    padding:13px;
+    padding:14px;
     background:var(--roxo);
     color:#fff;
     border:none;
-    border-radius:10px;
+    border-radius:12px;
     font-family:'Montserrat',sans-serif;
     font-size:14px;
     font-weight:700;
     cursor:pointer;
     margin-top:4px;
+    transition:background .15s ease, transform .15s ease;
   }
-  .btn-salvar:hover{ background:#749327; }
+  .btn-salvar:hover{ background:#5C7A22; transform:translateY(-1px); }
 
   .form-erro{
     background:#FBEAEA;
     color:#C13B3B;
-    border-radius:10px;
-    padding:12px 14px;
+    border-radius:12px;
+    padding:12px 15px;
     font-size:13px;
     font-weight:600;
     margin-bottom:16px;
   }
 
   .form-sucesso{
-    background:#EAF3D8;
+    background:var(--roxo-suave);
     color:#4C6320;
-    border-radius:10px;
-    padding:12px 14px;
+    border-radius:12px;
+    padding:12px 15px;
     font-size:13px;
     font-weight:600;
     margin-bottom:16px;
@@ -112,8 +135,10 @@
     nav{ width:100%; justify-content:flex-start; overflow-x:auto; }
     .nav-link{ padding:8px 12px; font-size:13px; white-space:nowrap; }
     .sub-header{ padding:10px 18px; font-size:12px; }
-    main{ padding:32px 16px 60px; }
-    .hero h1{ font-size:22px; }
+    main{ padding:0 16px 60px; }
+    .hero{ padding:24px 20px 56px; margin:20px 0 -32px; border-radius:18px; }
+    .hero h1{ font-size:20px; }
+    .hero p{ font-size:13px; }
     .card{ padding:18px; }
   }
 </style>
@@ -142,7 +167,7 @@
     <p>Confira seus dados de cadastro e altere sua senha quando quiser.</p>
   </div>
 
-  <div class="card">
+  <div class="card card-flutuante">
     <h2>Meus dados</h2>
     <div class="dados-lista">
       <div class="dados-item">

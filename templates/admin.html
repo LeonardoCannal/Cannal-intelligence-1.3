@@ -7,6 +7,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+  // Alguns bloqueadores (ex: Brave Shields) bloqueiam o cdnjs. Se o Chart.js
+  // não carregou por essa via, carrega uma segunda fonte (jsDelivr) em segundo
+  // plano, pronta pra quando o admin abrir o dashboard de um usuário.
+  window.carregandoChartFallback = null;
+  if (typeof Chart === 'undefined') {
+    window.carregandoChartFallback = new Promise(function(resolve){
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+      s.onload = function(){ resolve(true); };
+      s.onerror = function(){ resolve(false); };
+      document.head.appendChild(s);
+    });
+  }
+</script>
 </head>
 <body>
   <div class="admin-header">
@@ -30,16 +45,21 @@
     </div>
   </div>
 
-  <main class="admin-main">
-    <div class="admin-nav">
-      <a href="{{ url_for('admin') }}" class="admin-nav-link ativo">Usuários</a>
-      <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link">Dashboard</a>
+  <div class="hero-secao">
+    <div class="hero-secao-conteudo">
+      <h1>Usuários cadastrados</h1>
+      <p>{{ usuarios|length }} pessoa(s) já criaram conta no Cannal.</p>
     </div>
+  </div>
 
-    <h1>Usuários cadastrados</h1>
-    <p>{{ usuarios|length }} pessoa(s) já criaram conta no Cannal.</p>
+  <main class="admin-main">
+    <div class="card-flutuante">
+      <div class="admin-nav">
+        <a href="{{ url_for('admin') }}" class="admin-nav-link ativo">Usuários</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link">Dashboard</a>
+      </div>
 
-    <div class="tabela-scroll">
+      <div class="tabela-scroll">
       <table class="tabela-admin">
         <thead>
           <tr>
@@ -78,6 +98,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </main>
 
@@ -253,26 +274,37 @@
             graficoEspecialidadesUsuario = null;
           }
 
+          function desenharGraficoEspecialidades(){
+            if(typeof Chart === 'undefined'){
+              wrapperEspecialidades.innerHTML = '<div class="grafico-vazio">Não foi possível carregar o gráfico (bloqueado pelo navegador). Tente desativar bloqueadores de anúncio/script para esta página.</div>';
+              return;
+            }
+            wrapperEspecialidades.innerHTML = '<canvas id="dash-grafico-especialidades"></canvas>';
+            graficoEspecialidadesUsuario = new Chart(document.getElementById('dash-grafico-especialidades'), {
+              type: 'bar',
+              data: {
+                labels: dados.top_especialidades.map(e => e.especialidade),
+                datasets: [{ data: dados.top_especialidades.map(e => e.total), backgroundColor: '#88AD36', borderRadius: 6, maxBarThickness: 22 }]
+              },
+              options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+              }
+            });
+          }
+
           if(dados.top_especialidades.length === 0){
             wrapperEspecialidades.innerHTML = '<div class="grafico-vazio">Ainda não há especialidades no painel desse usuário.</div>';
+          } else if(typeof Chart !== 'undefined'){
+            desenharGraficoEspecialidades();
+          } else if(window.carregandoChartFallback){
+            wrapperEspecialidades.innerHTML = '<div class="grafico-vazio">Carregando gráfico...</div>';
+            window.carregandoChartFallback.then(desenharGraficoEspecialidades);
           } else {
-            wrapperEspecialidades.innerHTML = '<canvas id="dash-grafico-especialidades"></canvas>';
-            if(typeof Chart !== 'undefined'){
-              graficoEspecialidadesUsuario = new Chart(document.getElementById('dash-grafico-especialidades'), {
-                type: 'bar',
-                data: {
-                  labels: dados.top_especialidades.map(e => e.especialidade),
-                  datasets: [{ data: dados.top_especialidades.map(e => e.total), backgroundColor: '#88AD36', borderRadius: 6, maxBarThickness: 22 }]
-                },
-                options: {
-                  indexAxis: 'y',
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: { legend: { display: false } },
-                  scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-                }
-              });
-            }
+            desenharGraficoEspecialidades();
           }
         });
     }
