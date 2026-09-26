@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cannal · Mapeie o mercado de prescritores</title>
+<title>i.cannal · Mapeie o mercado de prescritores</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -374,8 +374,8 @@
   /* Painel Médico (colunas) */
   .painel-colunas{
     display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
+    grid-template-columns:repeat(4, 1fr);
+    gap:16px;
     margin-top:8px;
     position:relative;
     z-index:2;
@@ -385,13 +385,18 @@
     background:var(--fundo-card);
     border:1px solid var(--borda);
     border-radius:18px;
-    padding:18px;
+    padding:16px;
     box-shadow:0 1px 2px rgba(23,27,34,.06), 0 20px 40px rgba(23,27,34,.1);
+  }
+
+  .painel-coluna-revisitar{
+    border-color:#E7B84A;
+    box-shadow:0 1px 2px rgba(23,27,34,.06), 0 20px 40px rgba(180,120,10,.1);
   }
 
   .painel-coluna-titulo{
     font-weight:700;
-    font-size:15px;
+    font-size:14px;
     color:var(--roxo-escuro);
     margin-bottom:14px;
     display:flex;
@@ -408,6 +413,8 @@
     font-weight:700;
   }
 
+  .painel-coluna-revisitar .painel-contador{ background:#FBEFD6; color:#95650B; }
+
   .painel-lista{
     display:flex;
     flex-direction:column;
@@ -419,7 +426,7 @@
   .painel-card{
     background:var(--fundo);
     border-radius:12px;
-    padding:13px 15px;
+    padding:13px 14px;
     display:flex;
     flex-direction:column;
     gap:3px;
@@ -428,24 +435,103 @@
   }
   .painel-card:hover{ background:var(--roxo-suave); }
 
-  .painel-card strong{ font-size:14px; color:var(--texto); }
-  .painel-card strong.nome-visitado{ color:#5C7A22; }
-  .painel-card span{ color:var(--texto-suave); font-size:12.5px; }
+  .painel-card-topo{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:6px;
+  }
 
-  .painel-btn-mover{
-    margin-top:8px;
+  .painel-card strong{ font-size:13.5px; color:var(--texto); }
+  .painel-card strong.nome-visitado{ color:#5C7A22; }
+  .painel-card span{ color:var(--texto-suave); font-size:12px; }
+
+  .painel-card-icones{
+    display:flex;
+    gap:4px;
+    flex-shrink:0;
+  }
+
+  .painel-icone-btn{
+    background:none;
+    border:none;
+    padding:3px;
+    cursor:pointer;
+    color:var(--texto-suave);
+    display:flex;
+    align-items:center;
+    border-radius:6px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .painel-icone-btn:hover{ background:#fff; color:var(--roxo-escuro); }
+  .painel-icone-btn svg{ width:15px; height:15px; }
+  .painel-icone-btn.tem-observacao{ color:#5C7A22; }
+
+  .painel-badge-agenda{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    background:var(--roxo-suave);
+    color:#5C7A22;
+    font-size:11px;
+    font-weight:700;
+    padding:4px 9px;
+    border-radius:999px;
+    margin-top:4px;
     align-self:flex-start;
+  }
+
+  .painel-acoes{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:9px;
+  }
+
+  .painel-btn-mover, .painel-btn-agendar, .painel-btn-maps, .painel-btn-cancelar{
     background:transparent;
     border:1.5px solid var(--roxo);
     color:#5C7A22;
-    padding:6px 13px;
+    padding:6px 12px;
     border-radius:8px;
-    font-size:12px;
+    font-size:11.5px;
     font-weight:700;
     cursor:pointer;
     transition:background .15s ease, color .15s ease;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
   }
-  .painel-btn-mover:hover{ background:var(--roxo); color:#fff; }
+  .painel-btn-mover:hover, .painel-btn-agendar:hover{ background:var(--roxo); color:#fff; }
+
+  .painel-btn-agendar{ border-color:var(--marinho-profundo); color:var(--marinho-profundo); }
+  .painel-btn-agendar:hover{ background:var(--marinho-profundo); color:#fff; }
+
+  .painel-btn-cancelar{ border-color:#C13B3B; color:#C13B3B; }
+  .painel-btn-cancelar:hover{ background:#C13B3B; color:#fff; }
+
+  .painel-btn-maps{ border-color:var(--borda); color:var(--texto-suave); }
+  .painel-btn-maps:hover{ background:var(--texto); border-color:var(--texto); color:#fff; }
+  .painel-btn-maps svg{ width:13px; height:13px; }
+
+  /* Banner de inatividade */
+  .banner-inatividade{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:#FBEFD6;
+    border:1px solid #E7B84A;
+    color:#7A5A0B;
+    padding:14px 18px;
+    border-radius:14px;
+    font-size:13.5px;
+    font-weight:600;
+    margin-bottom:20px;
+  }
+  .banner-inatividade-icone{ font-size:18px; flex-shrink:0; }
 
   /* Card de aviso (substitui o alert() do navegador) */
   .aviso-overlay{
@@ -553,7 +639,158 @@
 
   .cadastro-cabecalho h2{ font-size:17px; font-weight:800; margin:0; color:var(--texto); }
 
+  /* Modais genéricos (agendar / observações) — mesmo padrão do aviso-overlay */
+  .modal-overlay{
+    display:flex;
+    position:fixed;
+    inset:0;
+    background:rgba(23,27,34,.6);
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:200;
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .2s ease, visibility 0s linear .2s;
+  }
+  .modal-overlay.aberto{ opacity:1; visibility:visible; transition:opacity .2s ease; }
+
+  .modal-painel{
+    background:var(--fundo-card);
+    border-radius:20px;
+    padding:26px;
+    width:100%;
+    box-shadow:0 1px 2px rgba(23,27,34,.06), 0 30px 60px rgba(23,27,34,.28);
+    transform:scale(.95) translateY(10px);
+    transition:transform .22s cubic-bezier(.34,1.56,.64,1);
+    max-height:88vh;
+    overflow-y:auto;
+  }
+  .modal-overlay.aberto .modal-painel{ transform:scale(1) translateY(0); }
+
+  .modal-cabecalho{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .modal-cabecalho h2{ font-size:17px; font-weight:800; letter-spacing:-0.01em; margin:0; color:var(--texto); }
+  .modal-fechar{ background:none; border:none; font-size:22px; line-height:1; color:var(--texto-suave); cursor:pointer; }
+  .modal-fechar:hover{ color:var(--texto); }
+
+  /* Modal de agendar visita */
+  .modal-agendar-painel{ max-width:640px; }
+
+  .agendar-corpo{
+    display:grid;
+    grid-template-columns:1.1fr 1fr;
+    gap:24px;
+  }
+
+  .calendario-topo{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .calendario-topo span{ font-weight:700; font-size:13.5px; color:var(--texto); }
+
+  .cal-nav{
+    background:var(--fundo);
+    border:1px solid var(--borda);
+    color:var(--texto);
+    width:26px; height:26px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+    line-height:1;
+  }
+  .cal-nav:hover{ background:var(--roxo-suave); }
+
+  .calendario-dias-semana{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    text-align:center;
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--texto-suave);
+    margin-bottom:4px;
+  }
+
+  .calendario-grade{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:3px;
+  }
+
+  .cal-dia{
+    aspect-ratio:1;
+    border:none;
+    background:none;
+    border-radius:8px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--texto);
+    cursor:pointer;
+    position:relative;
+  }
+  .cal-dia:hover{ background:var(--roxo-suave); }
+  .cal-dia-vazio{ cursor:default; }
+  .cal-dia-vazio:hover{ background:none; }
+  .cal-dia-passado{ color:var(--borda); cursor:not-allowed; }
+  .cal-dia-passado:hover{ background:none; }
+  .cal-dia-hoje{ box-shadow:inset 0 0 0 1.5px var(--roxo); }
+  .cal-dia-tem-agenda::after{
+    content:"";
+    position:absolute;
+    bottom:3px; left:50%;
+    transform:translateX(-50%);
+    width:4px; height:4px;
+    border-radius:50%;
+    background:var(--roxo);
+  }
+  .cal-dia-selecionado{ background:var(--roxo); color:#fff; }
+  .cal-dia-selecionado::after{ background:#fff; }
+
+  .agendar-horarios h3{ font-size:13px; font-weight:700; color:var(--texto); margin:0 0 10px; }
+
+  .horarios-grade{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    max-height:340px;
+    overflow-y:auto;
+  }
+
+  .horario-slot{
+    padding:9px 6px;
+    border:1.5px solid var(--borda);
+    background:var(--fundo);
+    border-radius:9px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--texto);
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .horario-slot:hover{ border-color:var(--roxo); background:var(--roxo-suave); }
+  .horario-ocupado{ background:#F3F1EC; color:var(--texto-suave); border-color:var(--borda); cursor:not-allowed; text-decoration:line-through; }
+  .horario-ocupado:hover{ background:#F3F1EC; border-color:var(--borda); }
+
+  /* Modal de observações */
+  .modal-obs-painel{ max-width:460px; }
+  .obs-textarea{
+    width:100%;
+    border:1.5px solid var(--borda);
+    border-radius:12px;
+    padding:13px 15px;
+    font-family:'Montserrat',sans-serif;
+    font-size:13.5px;
+    color:var(--texto);
+    background:var(--fundo);
+    resize:vertical;
+    outline:none;
+    transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .obs-textarea:focus{ border-color:var(--roxo); background:#fff; box-shadow:0 0 0 4px var(--roxo-suave); }
+
   /* ===== Versão mobile ===== */
+  @media (max-width: 1000px){
+    .painel-colunas{
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
   @media (max-width: 640px){
     header{
       padding: 14px 16px;
@@ -641,6 +878,13 @@
     .painel-colunas{
       grid-template-columns: 1fr;
     }
+
+    .agendar-corpo{
+      grid-template-columns: 1fr;
+    }
+
+    .modal-agendar-painel{ padding: 18px; }
+    .horarios-grade{ max-height: 220px; }
   }
 
   @media (max-width: 380px){
@@ -653,11 +897,18 @@
 
 <header>
   <div class="brand">
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" class="logo-completo">
+    <svg class="logo-completo" viewBox="0 0 260 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="i.cannal">
+      <polygon points="2,0 15,0 29,40 16,40" fill="#88AD36"/>
+      <polygon points="23,0 36,0 50,40 37,40" fill="#88AD36"/>
+      <text x="64" y="30" font-family="Montserrat, sans-serif" font-weight="800" font-size="27" letter-spacing="0.3">
+        <tspan fill="#A8CC5A">i.</tspan><tspan fill="#FFFFFF">cannal</tspan>
+      </text>
+    </svg>
   </div>
   <nav>
     <button id="tab-buscar" class="ativo">Buscar</button>
     <button id="tab-painel">Painel Médico</button>
+    <a href="{{ url_for('agenda') }}" class="nav-link">Agenda</a>
     {% if current_user.is_admin %}
     <a href="{{ url_for('admin') }}" class="nav-link">Painel Admin</a>
     {% endif %}
@@ -674,7 +925,7 @@
     <div class="hero">
       <div class="hero-eyebrow"><span class="ponto-live"></span> Mercado em tempo real</div>
       <h1>Encontre o médico certo. Perto de você!</h1>
-      <p>Defina seu mercado! A Cannal mapeia médicos por região e especialidade, apresentando nome, CRM, endereço e telefone, quando disponíveis.</p>
+      <p>Defina seu mercado! A i.cannal mapeia médicos por região e especialidade, apresentando nome, CRM, endereço e telefone, quando disponíveis.</p>
 
       <div class="ticker">
         <div class="ticker-item"><span class="num">{{ ticker.medicos_base }}</span><span class="rot">médicos mapeados</span></div>
@@ -682,6 +933,13 @@
         <div class="ticker-item"><span class="num">{{ ticker.buscas_hoje }}</span><span class="rot">buscas hoje</span></div>
       </div>
     </div>
+
+    {% if aviso_inatividade %}
+    <div class="banner-inatividade">
+      <span class="banner-inatividade-icone">⏰</span>
+      <span>Já faz {{ dias_inativo }} dias que você não visita nenhum médico do seu painel. Precisa de algo da equipe de inteligência da i.cannal?</span>
+    </div>
+    {% endif %}
 
     <div class="card-busca">
       <div class="campo">
@@ -762,8 +1020,16 @@
         <div class="painel-lista" id="lista-prospectados"></div>
       </div>
       <div class="painel-coluna">
+        <div class="painel-coluna-titulo">Agendados <span class="painel-contador" id="contador-agendados">0</span></div>
+        <div class="painel-lista" id="lista-agendados"></div>
+      </div>
+      <div class="painel-coluna">
         <div class="painel-coluna-titulo">Visitados <span class="painel-contador" id="contador-visitados">0</span></div>
         <div class="painel-lista" id="lista-visitados"></div>
+      </div>
+      <div class="painel-coluna painel-coluna-revisitar">
+        <div class="painel-coluna-titulo">Revisitar <span class="painel-contador" id="contador-revisitar">0</span></div>
+        <div class="painel-lista" id="lista-revisitar"></div>
       </div>
     </div>
   </section>
@@ -820,6 +1086,45 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-agendar">
+  <div class="modal-painel modal-agendar-painel">
+    <div class="modal-cabecalho">
+      <h2 id="agendar-titulo">Agendar visita</h2>
+      <button type="button" id="agendar-fechar" class="modal-fechar" aria-label="Fechar">&times;</button>
+    </div>
+
+    <div class="agendar-corpo">
+      <div class="agendar-calendario">
+        <div class="calendario-topo">
+          <button type="button" id="cal-mes-anterior" class="cal-nav" aria-label="Mês anterior">&lsaquo;</button>
+          <span id="cal-mes-label"></span>
+          <button type="button" id="cal-mes-proximo" class="cal-nav" aria-label="Próximo mês">&rsaquo;</button>
+        </div>
+        <div class="calendario-dias-semana">
+          <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+        </div>
+        <div class="calendario-grade" id="cal-grade"></div>
+      </div>
+
+      <div class="agendar-horarios">
+        <h3 id="horarios-titulo">Selecione um dia no calendário</h3>
+        <div class="horarios-grade" id="horarios-grade"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-observacoes">
+  <div class="modal-painel modal-obs-painel">
+    <div class="modal-cabecalho">
+      <h2 id="obs-titulo">Observações</h2>
+      <button type="button" id="obs-fechar" class="modal-fechar" aria-label="Fechar">&times;</button>
+    </div>
+    <textarea id="obs-texto" class="obs-textarea" rows="7" placeholder="Anote aqui informações e observações sobre esse médico..."></textarea>
+    <button type="button" id="obs-salvar" class="btn-buscar" style="margin-top:14px;">Salvar observações</button>
+  </div>
+</div>
+
 <script>
   const especialidades = {{ especialidades | tojson }};
   const MAX_ESPECIALIDADES = {{ max_especialidades }};
@@ -866,9 +1171,13 @@
   const resultadosConteudo = document.getElementById('resultados-conteudo');
 
   const listaProspectados = document.getElementById('lista-prospectados');
+  const listaAgendados = document.getElementById('lista-agendados');
   const listaVisitados = document.getElementById('lista-visitados');
+  const listaRevisitar = document.getElementById('lista-revisitar');
   const contadorProspectados = document.getElementById('contador-prospectados');
+  const contadorAgendados = document.getElementById('contador-agendados');
   const contadorVisitados = document.getElementById('contador-visitados');
+  const contadorRevisitar = document.getElementById('contador-revisitar');
 
   let ultimoResultado = null;
 
@@ -1141,7 +1450,7 @@
         renderizarChips();
       })
       .catch(() => {
-        resultadosConteudo.innerHTML = '<div class="estado-erro">Não foi possível conectar ao servidor do Cannal.</div>';
+        resultadosConteudo.innerHTML = '<div class="estado-erro">Não foi possível conectar ao servidor do i.cannal.</div>';
       })
       .finally(() => {
         btnBuscar.disabled = false;
@@ -1153,56 +1462,133 @@
 
   // ===== Painel Médico =====
 
-  function criarCardPainel(item){
+  function formatarDataBR(dataISO){
+    const partes = dataISO.split('-');
+    return `${partes[2]}/${partes[1]}`;
+  }
+
+  function abrirNoMaps(item){
+    const endereco = [item.endereco, item.cidade, item.uf].filter(Boolean).join(', ');
+    if(!endereco) return;
+    window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(endereco), '_blank');
+  }
+
+  function criarCardPainel(item, coluna){
     const div = document.createElement('div');
     div.className = 'painel-card';
 
     const linhaLocal = [item.cidade, item.uf].filter(Boolean).join(' - ');
-    const classeNome = item.status === 'visitado' ? ' class="nome-visitado"' : '';
+    const classeNome = (coluna === 'visitados' || coluna === 'revisitar') ? ' class="nome-visitado"' : '';
+    const temObs = !!(item.observacoes && item.observacoes.trim());
+
+    let badgeAgenda = '';
+    if(coluna === 'agendados' && item.compromisso){
+      badgeAgenda = `<span class="painel-badge-agenda">📅 ${formatarDataBR(item.compromisso.data)} às ${item.compromisso.horario}</span>`;
+    }
 
     div.innerHTML = `
-      <strong${classeNome}>${item.nome}</strong>
+      <div class="painel-card-topo">
+        <strong${classeNome}>${item.nome}</strong>
+        <div class="painel-card-icones">
+          <button type="button" class="painel-icone-btn btn-editar-obs" title="Observações" data-id="${item.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          ${temObs ? `
+          <button type="button" class="painel-icone-btn tem-observacao btn-ver-obs" title="Ver observações" data-id="${item.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h4"/></svg>
+          </button>` : ''}
+        </div>
+      </div>
       <span>${item.especialidade || ''}</span>
       <span>${item.crm || ''}</span>
       <span>${linhaLocal}</span>
       <span>${item.endereco || ''}</span>
       <span>${item.telefone || ''}</span>
+      ${badgeAgenda}
     `;
 
-    const botaoMover = document.createElement('button');
-    botaoMover.className = 'painel-btn-mover';
-    const novoStatus = item.status === 'visitado' ? 'prospectado' : 'visitado';
-    botaoMover.textContent = item.status === 'visitado' ? '← Mover para Prospectados' : 'Mover para Visitados →';
-    botaoMover.addEventListener('click', () => moverNoPainel(item.id, novoStatus));
+    const acoes = document.createElement('div');
+    acoes.className = 'painel-acoes';
 
-    div.appendChild(botaoMover);
+    if(coluna === 'prospectados' || coluna === 'revisitar'){
+      const btnAgendar = document.createElement('button');
+      btnAgendar.type = 'button';
+      btnAgendar.className = 'painel-btn-agendar';
+      btnAgendar.textContent = 'Agendar';
+      btnAgendar.addEventListener('click', () => abrirModalAgendar(item.id, item.nome));
+      acoes.appendChild(btnAgendar);
+    }
+
+    if(coluna === 'agendados'){
+      const btnVisitado = document.createElement('button');
+      btnVisitado.type = 'button';
+      btnVisitado.className = 'painel-btn-mover';
+      btnVisitado.textContent = 'Marcar visitado';
+      btnVisitado.addEventListener('click', () => moverNoPainel(item.id, 'visitado'));
+      acoes.appendChild(btnVisitado);
+
+      const btnCancelar = document.createElement('button');
+      btnCancelar.type = 'button';
+      btnCancelar.className = 'painel-btn-cancelar';
+      btnCancelar.textContent = 'Cancelar';
+      btnCancelar.addEventListener('click', () => cancelarAgendamento(item.id));
+      acoes.appendChild(btnCancelar);
+    }
+
+    if(coluna === 'visitados'){
+      const btnVoltar = document.createElement('button');
+      btnVoltar.type = 'button';
+      btnVoltar.className = 'painel-btn-mover';
+      btnVoltar.textContent = '← Prospectados';
+      btnVoltar.addEventListener('click', () => moverNoPainel(item.id, 'prospectado'));
+      acoes.appendChild(btnVoltar);
+    }
+
+    if(item.endereco || item.cidade){
+      const btnMaps = document.createElement('button');
+      btnMaps.type = 'button';
+      btnMaps.className = 'painel-btn-maps';
+      btnMaps.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Maps';
+      btnMaps.addEventListener('click', () => abrirNoMaps(item));
+      acoes.appendChild(btnMaps);
+    }
+
+    div.appendChild(acoes);
+
+    div.querySelector('.btn-editar-obs').addEventListener('click', () => abrirModalObservacoes(item.id, item.nome, item.observacoes || ''));
+    const btnVerObs = div.querySelector('.btn-ver-obs');
+    if(btnVerObs){
+      btnVerObs.addEventListener('click', () => abrirModalObservacoes(item.id, item.nome, item.observacoes || ''));
+    }
+
     return div;
   }
 
   function carregarPainel(){
     listaProspectados.innerHTML = '<div class="vazio">Carregando...</div>';
+    listaAgendados.innerHTML = '';
     listaVisitados.innerHTML = '';
+    listaRevisitar.innerHTML = '';
 
     fetch('/api/painel')
       .then(res => res.json())
       .then(dados => {
-        listaProspectados.innerHTML = '';
-        listaVisitados.innerHTML = '';
-
         contadorProspectados.textContent = dados.prospectados.length;
+        contadorAgendados.textContent = dados.agendados.length;
         contadorVisitados.textContent = dados.visitados.length;
+        contadorRevisitar.textContent = dados.revisitar.length;
 
-        if(dados.prospectados.length === 0){
-          listaProspectados.innerHTML = '<div class="vazio">Nenhum médico prospectado ainda.</div>';
-        } else {
-          dados.prospectados.forEach(item => listaProspectados.appendChild(criarCardPainel(item)));
-        }
+        listaProspectados.innerHTML = dados.prospectados.length === 0 ? '<div class="vazio">Nenhum médico prospectado ainda.</div>' : '';
+        dados.prospectados.forEach(item => listaProspectados.appendChild(criarCardPainel(item, 'prospectados')));
 
-        if(dados.visitados.length === 0){
-          listaVisitados.innerHTML = '<div class="vazio">Nenhum médico visitado ainda.</div>';
-        } else {
-          dados.visitados.forEach(item => listaVisitados.appendChild(criarCardPainel(item)));
-        }
+        listaAgendados.innerHTML = dados.agendados.length === 0 ? '<div class="vazio">Nenhuma visita agendada ainda.</div>' : '';
+        dados.agendados.forEach(item => listaAgendados.appendChild(criarCardPainel(item, 'agendados')));
+
+        listaVisitados.innerHTML = dados.visitados.length === 0 ? '<div class="vazio">Nenhum médico visitado ainda.</div>' : '';
+        dados.visitados.forEach(item => listaVisitados.appendChild(criarCardPainel(item, 'visitados')));
+
+        listaRevisitar.innerHTML = dados.revisitar.length === 0 ? '<div class="vazio">Ninguém pra revisitar por enquanto.</div>' : '';
+        dados.revisitar.forEach(item => listaRevisitar.appendChild(criarCardPainel(item, 'revisitar')));
       })
       .catch(() => {
         listaProspectados.innerHTML = '<div class="estado-erro">Não foi possível carregar o painel.</div>';
@@ -1217,8 +1603,189 @@
     })
       .then(res => res.json())
       .then(() => carregarPainel())
-      .catch(() => alert('Não foi possível mover o médico agora.'));
+      .catch(() => mostrarAviso('Não foi possível mover o médico agora.'));
   }
+
+  function cancelarAgendamento(entradaId){
+    fetch(`/api/painel/${entradaId}/cancelar-agendamento`, { method: 'POST' })
+      .then(res => res.json())
+      .then(() => carregarPainel())
+      .catch(() => mostrarAviso('Não foi possível cancelar o agendamento.'));
+  }
+
+  // ===== Modal: agendar visita (calendário + horários) =====
+  const modalAgendar = document.getElementById('modal-agendar');
+  const agendarTitulo = document.getElementById('agendar-titulo');
+  const calMesLabel = document.getElementById('cal-mes-label');
+  const calGrade = document.getElementById('cal-grade');
+  const horariosTitulo = document.getElementById('horarios-titulo');
+  const horariosGrade = document.getElementById('horarios-grade');
+
+  const NOMES_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  let agendarEntradaId = null;
+  let agendarMesRef = new Date();
+  let agendarDiaSelecionado = null;
+  let agendarDiasComCompromisso = {};
+
+  function pad2(n){ return n.toString().padStart(2, '0'); }
+
+  function abrirModalAgendar(entradaId, nomeMedico){
+    agendarEntradaId = entradaId;
+    agendarTitulo.textContent = `Agendar visita — ${nomeMedico}`;
+    agendarMesRef = new Date();
+    agendarDiaSelecionado = null;
+    horariosTitulo.textContent = 'Selecione um dia no calendário';
+    horariosGrade.innerHTML = '';
+    modalAgendar.classList.add('aberto');
+    renderizarCalendario();
+  }
+
+  function renderizarCalendario(){
+    const ano = agendarMesRef.getFullYear();
+    const mes = agendarMesRef.getMonth();
+    calMesLabel.textContent = `${NOMES_MESES[mes]} ${ano}`;
+
+    fetch(`/api/agenda/mes?ano=${ano}&mes=${mes + 1}`)
+      .then(res => res.json())
+      .then(dados => {
+        agendarDiasComCompromisso = dados.dias || {};
+        desenharGradeCalendario(ano, mes);
+      })
+      .catch(() => desenharGradeCalendario(ano, mes));
+  }
+
+  function desenharGradeCalendario(ano, mes){
+    calGrade.innerHTML = '';
+    const offset = new Date(ano, mes, 1).getDay();
+    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+    const hoje = new Date();
+    const hojeStr = `${hoje.getFullYear()}-${pad2(hoje.getMonth() + 1)}-${pad2(hoje.getDate())}`;
+
+    for(let i = 0; i < offset; i++){
+      const vazio = document.createElement('div');
+      vazio.className = 'cal-dia cal-dia-vazio';
+      calGrade.appendChild(vazio);
+    }
+
+    for(let d = 1; d <= diasNoMes; d++){
+      const dataStr = `${ano}-${pad2(mes + 1)}-${pad2(d)}`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-dia';
+      btn.textContent = d;
+      if(dataStr < hojeStr) btn.classList.add('cal-dia-passado');
+      if(dataStr === hojeStr) btn.classList.add('cal-dia-hoje');
+      if(agendarDiasComCompromisso[dataStr]) btn.classList.add('cal-dia-tem-agenda');
+      if(dataStr === agendarDiaSelecionado) btn.classList.add('cal-dia-selecionado');
+      btn.addEventListener('click', () => selecionarDia(dataStr, btn));
+      calGrade.appendChild(btn);
+    }
+  }
+
+  function selecionarDia(dataStr, botaoEl){
+    agendarDiaSelecionado = dataStr;
+    calGrade.querySelectorAll('.cal-dia').forEach(b => b.classList.remove('cal-dia-selecionado'));
+    if(botaoEl) botaoEl.classList.add('cal-dia-selecionado');
+
+    const [ano, mes, dia] = dataStr.split('-');
+    horariosTitulo.textContent = `Horários de ${dia}/${mes}/${ano}`;
+    horariosGrade.innerHTML = '<div class="vazio">Carregando...</div>';
+
+    fetch(`/api/agenda/dia?data=${dataStr}`)
+      .then(res => res.json())
+      .then(dados => {
+        horariosGrade.innerHTML = '';
+        dados.horarios.forEach(h => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'horario-slot' + (h.ocupado ? ' horario-ocupado' : '');
+          btn.textContent = h.horario;
+          if(h.ocupado){
+            btn.disabled = true;
+            btn.title = h.medico ? `Ocupado — ${h.medico.nome}` : 'Ocupado';
+          } else {
+            btn.addEventListener('click', () => confirmarAgendamento(dataStr, h.horario));
+          }
+          horariosGrade.appendChild(btn);
+        });
+      })
+      .catch(() => {
+        horariosGrade.innerHTML = '<div class="estado-erro">Não foi possível carregar os horários.</div>';
+      });
+  }
+
+  function confirmarAgendamento(dataStr, horario){
+    fetch('/api/painel/agendar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: agendarEntradaId, data: dataStr, horario })
+    })
+      .then(res => res.json())
+      .then(resp => {
+        if(resp.ok){
+          modalAgendar.classList.remove('aberto');
+          carregarPainel();
+        } else {
+          mostrarAviso(resp.mensagem || 'Não foi possível agendar.');
+        }
+      })
+      .catch(() => mostrarAviso('Erro de conexão ao agendar.'));
+  }
+
+  document.getElementById('agendar-fechar').addEventListener('click', () => modalAgendar.classList.remove('aberto'));
+  modalAgendar.addEventListener('click', (e) => { if(e.target === modalAgendar) modalAgendar.classList.remove('aberto'); });
+  document.getElementById('cal-mes-anterior').addEventListener('click', () => {
+    agendarMesRef = new Date(agendarMesRef.getFullYear(), agendarMesRef.getMonth() - 1, 1);
+    renderizarCalendario();
+  });
+  document.getElementById('cal-mes-proximo').addEventListener('click', () => {
+    agendarMesRef = new Date(agendarMesRef.getFullYear(), agendarMesRef.getMonth() + 1, 1);
+    renderizarCalendario();
+  });
+
+  // ===== Modal: observações do médico =====
+  const modalObs = document.getElementById('modal-observacoes');
+  const obsTitulo = document.getElementById('obs-titulo');
+  const obsTextoEl = document.getElementById('obs-texto');
+  const obsSalvarBtn = document.getElementById('obs-salvar');
+  let obsEntradaId = null;
+
+  function abrirModalObservacoes(id, nome, textoAtual){
+    obsEntradaId = id;
+    obsTitulo.textContent = `Observações — ${nome}`;
+    obsTextoEl.value = textoAtual;
+    modalObs.classList.add('aberto');
+  }
+
+  document.getElementById('obs-fechar').addEventListener('click', () => modalObs.classList.remove('aberto'));
+  modalObs.addEventListener('click', (e) => { if(e.target === modalObs) modalObs.classList.remove('aberto'); });
+
+  obsSalvarBtn.addEventListener('click', () => {
+    if(obsEntradaId === null) return;
+    obsSalvarBtn.disabled = true;
+    obsSalvarBtn.textContent = 'Salvando...';
+    fetch(`/api/painel/${obsEntradaId}/observacoes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto: obsTextoEl.value })
+    })
+      .then(res => res.json())
+      .then(resp => {
+        obsSalvarBtn.disabled = false;
+        obsSalvarBtn.textContent = 'Salvar observações';
+        if(resp.ok){
+          modalObs.classList.remove('aberto');
+          carregarPainel();
+        } else {
+          mostrarAviso('Não foi possível salvar as observações.');
+        }
+      })
+      .catch(() => {
+        obsSalvarBtn.disabled = false;
+        obsSalvarBtn.textContent = 'Salvar observações';
+        mostrarAviso('Erro de conexão ao salvar observações.');
+      });
+  });
 
   // ===== Cadastro manual de médico =====
 

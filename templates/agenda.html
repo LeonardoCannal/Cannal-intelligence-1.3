@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>i.cannal · Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --roxo: #88AD36;
+    --roxo-escuro: #343C4C;
+    --roxo-suave: #E9F0DA;
+    --fundo: #F6F7F2;
+    --fundo-card: #FFFFFF;
+    --texto: #232935;
+    --texto-suave: #7A8175;
+    --borda: #E7EADF;
+    --marinho-profundo: #171B22;
+  }
+  *{ box-sizing: border-box; }
+  body{ margin:0; font-family:'Montserrat',sans-serif; background:var(--fundo); color:var(--texto); }
+  h1,h2,h3{ margin:0; }
+
+  header{ background:var(--marinho-profundo); color:#fff; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; }
+  .logo-completo{ height:32px; width:auto; display:block; }
+
+  nav{ display:flex; gap:4px; background:rgba(255,255,255,.07); padding:4px; border-radius:999px; align-items:center; }
+  nav a{ color:rgba(255,255,255,.72); text-decoration:none; padding:9px 19px; font-size:14px; font-weight:500; border-radius:999px; }
+  nav a:hover{ color:#fff; }
+  nav a.ativo{ background:var(--roxo); color:#fff; }
+
+  .hero-secao{
+    background:var(--marinho-profundo);
+    padding:40px 36px 92px;
+    color:#fff;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-secao::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:
+      radial-gradient(circle at 88% 24%, rgba(136,173,54,.5) 0, rgba(136,173,54,.5) 3px, transparent 4px),
+      radial-gradient(circle at 78% 58%, rgba(168,204,90,.4) 0, rgba(168,204,90,.4) 2.5px, transparent 3.5px);
+    pointer-events:none;
+  }
+  .hero-secao-conteudo{ max-width:1000px; margin:0 auto; position:relative; }
+  .hero-secao h1{ font-size:26px; font-weight:800; letter-spacing:-0.02em; margin-bottom:8px; }
+  .hero-secao p{ color:rgba(255,255,255,.6); font-size:14px; margin:0; }
+
+  main{ max-width:1000px; margin:-56px auto 60px; padding:0 24px; position:relative; z-index:2; }
+
+  .card-flutuante{
+    background:#fff;
+    border-radius:20px;
+    padding:26px;
+    box-shadow:0 1px 2px rgba(23,27,34,.07), 0 30px 60px rgba(23,27,34,.16);
+  }
+
+  .agenda-layout{
+    display:grid;
+    grid-template-columns:1fr 1.15fr;
+    gap:28px;
+  }
+
+  .calendario-topo{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .calendario-topo span{ font-weight:700; font-size:14.5px; color:var(--texto); }
+
+  .cal-nav{
+    background:var(--fundo);
+    border:1px solid var(--borda);
+    color:var(--texto);
+    width:28px; height:28px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+  }
+  .cal-nav:hover{ background:var(--roxo-suave); }
+
+  .calendario-dias-semana{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    text-align:center;
+    font-size:11px;
+    font-weight:700;
+    color:var(--texto-suave);
+    margin-bottom:4px;
+  }
+
+  .calendario-grade{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:4px;
+  }
+
+  .cal-dia{
+    aspect-ratio:1;
+    border:none;
+    background:none;
+    border-radius:9px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--texto);
+    cursor:pointer;
+    position:relative;
+  }
+  .cal-dia:hover{ background:var(--roxo-suave); }
+  .cal-dia-vazio{ cursor:default; }
+  .cal-dia-vazio:hover{ background:none; }
+  .cal-dia-hoje{ box-shadow:inset 0 0 0 1.5px var(--roxo); }
+  .cal-dia-tem-agenda::after{
+    content:"";
+    position:absolute;
+    bottom:4px; left:50%;
+    transform:translateX(-50%);
+    width:4px; height:4px;
+    border-radius:50%;
+    background:var(--roxo);
+  }
+  .cal-dia-selecionado{ background:var(--roxo); color:#fff; }
+  .cal-dia-selecionado::after{ background:#fff; }
+
+  .agenda-dia-painel h2{ font-size:15px; font-weight:800; color:var(--roxo-escuro); margin-bottom:4px; }
+  .agenda-dia-painel .subtitulo{ font-size:12.5px; color:var(--texto-suave); margin-bottom:16px; display:block; }
+
+  .horarios-lista-agenda{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:460px;
+    overflow-y:auto;
+  }
+
+  .horario-linha{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:11px 14px;
+    border-radius:12px;
+    background:var(--fundo);
+  }
+
+  .horario-linha-ocupado{ background:var(--roxo-suave); }
+
+  .horario-hora{
+    font-size:13px;
+    font-weight:800;
+    color:var(--roxo-escuro);
+    width:48px;
+    flex-shrink:0;
+  }
+
+  .horario-conteudo{ flex:1; min-width:0; }
+  .horario-conteudo strong{ font-size:13px; color:var(--texto); display:block; }
+  .horario-conteudo span{ font-size:11.5px; color:var(--texto-suave); }
+  .horario-livre{ font-size:12.5px; color:var(--texto-suave); font-style:italic; }
+
+  .vazio{ font-size:12.5px; color:var(--texto-suave); padding:20px 0; text-align:center; }
+
+  @media (max-width:900px){
+    .agenda-layout{ grid-template-columns:1fr; }
+  }
+
+  @media (max-width:640px){
+    header{ padding:14px 18px; }
+    .logo-completo{ height:28px; }
+    .hero-secao{ padding:28px 20px 64px; }
+    .hero-secao h1{ font-size:20px; }
+    main{ margin-top:-40px; padding:0 16px; }
+    .card-flutuante{ padding:18px; border-radius:16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="logo-completo" viewBox="0 0 260 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="i.cannal">
+    <polygon points="2,0 15,0 29,40 16,40" fill="#88AD36"/>
+    <polygon points="23,0 36,0 50,40 37,40" fill="#88AD36"/>
+    <text x="64" y="30" font-family="Montserrat, sans-serif" font-weight="800" font-size="27" letter-spacing="0.3">
+      <tspan fill="#A8CC5A">i.</tspan><tspan fill="#FFFFFF">cannal</tspan>
+    </text>
+  </svg>
+  <nav>
+    <a href="{{ url_for('index') }}">Buscar</a>
+    <a href="{{ url_for('index') }}">Painel Médico</a>
+    <a href="{{ url_for('agenda') }}" class="ativo">Agenda</a>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('admin') }}">Painel Admin</a>
+    {% endif %}
+    <a href="{{ url_for('perfil') }}">Meu Perfil</a>
+    <a href="{{ url_for('logout') }}">Sair</a>
+  </nav>
+</header>
+
+<div class="hero-secao">
+  <div class="hero-secao-conteudo">
+    <h1>Agenda</h1>
+    <p>Suas visitas marcadas, dia a dia — de 30 em 30 minutos.</p>
+  </div>
+</div>
+
+<main>
+  <div class="card-flutuante">
+    <div class="agenda-layout">
+      <div class="agenda-calendario">
+        <div class="calendario-topo">
+          <button type="button" id="cal-mes-anterior" class="cal-nav" aria-label="Mês anterior">&lsaquo;</button>
+          <span id="cal-mes-label"></span>
+          <button type="button" id="cal-mes-proximo" class="cal-nav" aria-label="Próximo mês">&rsaquo;</button>
+        </div>
+        <div class="calendario-dias-semana">
+          <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+        </div>
+        <div class="calendario-grade" id="cal-grade"></div>
+      </div>
+
+      <div class="agenda-dia-painel">
+        <h2 id="dia-titulo">Hoje</h2>
+        <span class="subtitulo" id="dia-subtitulo"></span>
+        <div class="horarios-lista-agenda" id="horarios-lista"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const NOMES_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const NOMES_DIAS_SEMANA = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+
+  const calMesLabel = document.getElementById('cal-mes-label');
+  const calGrade = document.getElementById('cal-grade');
+  const diaTitulo = document.getElementById('dia-titulo');
+  const diaSubtitulo = document.getElementById('dia-subtitulo');
+  const horariosLista = document.getElementById('horarios-lista');
+
+  let mesRef = new Date();
+  let diaSelecionado = null;
+  let diasComCompromisso = {};
+
+  function pad2(n){ return n.toString().padStart(2, '0'); }
+
+  function renderizarCalendario(){
+    const ano = mesRef.getFullYear();
+    const mes = mesRef.getMonth();
+    calMesLabel.textContent = `${NOMES_MESES[mes]} ${ano}`;
+
+    fetch(`/api/agenda/mes?ano=${ano}&mes=${mes + 1}`)
+      .then(res => res.json())
+      .then(dados => {
+        diasComCompromisso = dados.dias || {};
+        desenharGradeCalendario(ano, mes);
+      })
+      .catch(() => desenharGradeCalendario(ano, mes));
+  }
+
+  function desenharGradeCalendario(ano, mes){
+    calGrade.innerHTML = '';
+    const offset = new Date(ano, mes, 1).getDay();
+    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+    const hoje = new Date();
+    const hojeStr = `${hoje.getFullYear()}-${pad2(hoje.getMonth() + 1)}-${pad2(hoje.getDate())}`;
+
+    for(let i = 0; i < offset; i++){
+      const vazio = document.createElement('div');
+      vazio.className = 'cal-dia cal-dia-vazio';
+      calGrade.appendChild(vazio);
+    }
+
+    for(let d = 1; d <= diasNoMes; d++){
+      const dataStr = `${ano}-${pad2(mes + 1)}-${pad2(d)}`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-dia';
+      btn.textContent = d;
+      if(dataStr === hojeStr) btn.classList.add('cal-dia-hoje');
+      if(diasComCompromisso[dataStr]) btn.classList.add('cal-dia-tem-agenda');
+      if(dataStr === diaSelecionado) btn.classList.add('cal-dia-selecionado');
+      btn.addEventListener('click', () => selecionarDia(dataStr, btn));
+      calGrade.appendChild(btn);
+    }
+  }
+
+  function selecionarDia(dataStr, botaoEl){
+    diaSelecionado = dataStr;
+    calGrade.querySelectorAll('.cal-dia').forEach(b => b.classList.remove('cal-dia-selecionado'));
+    if(botaoEl) botaoEl.classList.add('cal-dia-selecionado');
+
+    const [ano, mes, dia] = dataStr.split('-').map(Number);
+    const dataObj = new Date(ano, mes - 1, dia);
+    diaTitulo.textContent = `${pad2(dia)}/${pad2(mes)}/${ano}`;
+    diaSubtitulo.textContent = NOMES_DIAS_SEMANA[dataObj.getDay()];
+
+    horariosLista.innerHTML = '<div class="vazio">Carregando...</div>';
+
+    fetch(`/api/agenda/dia?data=${dataStr}`)
+      .then(res => res.json())
+      .then(dados => {
+        horariosLista.innerHTML = '';
+        dados.horarios.forEach(h => {
+          const linha = document.createElement('div');
+          linha.className = 'horario-linha' + (h.ocupado ? ' horario-linha-ocupado' : '');
+
+          if(h.ocupado && h.medico){
+            const local = [h.medico.cidade, h.medico.uf].filter(Boolean).join(' - ');
+            linha.innerHTML = `
+              <span class="horario-hora">${h.horario}</span>
+              <div class="horario-conteudo">
+                <strong>${h.medico.nome}</strong>
+                <span>${h.medico.especialidade || ''}${local ? ' · ' + local : ''}</span>
+              </div>
+            `;
+          } else {
+            linha.innerHTML = `
+              <span class="horario-hora">${h.horario}</span>
+              <div class="horario-conteudo"><span class="horario-livre">Disponível</span></div>
+            `;
+          }
+          horariosLista.appendChild(linha);
+        });
+      })
+      .catch(() => {
+        horariosLista.innerHTML = '<div class="vazio">Não foi possível carregar os horários.</div>';
+      });
+  }
+
+  document.getElementById('cal-mes-anterior').addEventListener('click', () => {
+    mesRef = new Date(mesRef.getFullYear(), mesRef.getMonth() - 1, 1);
+    renderizarCalendario();
+  });
+  document.getElementById('cal-mes-proximo').addEventListener('click', () => {
+    mesRef = new Date(mesRef.getFullYear(), mesRef.getMonth() + 1, 1);
+    renderizarCalendario();
+  });
+
+  // Abre já no dia de hoje
+  const hoje = new Date();
+  const hojeStr = `${hoje.getFullYear()}-${pad2(hoje.getMonth() + 1)}-${pad2(hoje.getDate())}`;
+  renderizarCalendario();
+  selecionarDia(hojeStr, null);
+</script>
+</body>
+</html>

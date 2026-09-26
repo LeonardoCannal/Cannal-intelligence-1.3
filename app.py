@@ -37,6 +37,14 @@ from auth import (
     estatisticas_dashboard,
     estatisticas_usuario,
     estatisticas_ticker,
+    bucket_painel,
+    listar_horarios_dia,
+    agendar_medico,
+    cancelar_agendamento,
+    listar_compromissos_mes,
+    salvar_observacoes,
+    dias_sem_visitar,
+    buscar_compromisso_do_medico,
 )
 import webbrowser
 import threading
@@ -322,13 +330,18 @@ def admin_painel_usuario(user_id):
         return jsonify({"erro": "Usuário não encontrado."}), 404
 
     painel = listar_painel_usuario(user_id)
-    prospectados = [dict(m) for m in painel if m["status"] == "prospectado"]
-    visitados = [dict(m) for m in painel if m["status"] == "visitado"]
+    prospectados, agendados, visitados, revisitar = bucket_painel(painel)
+
+    agendados_dict = [dict(m) for m in agendados]
+    for m in agendados_dict:
+        m["compromisso"] = buscar_compromisso_do_medico(user_id, m["id"])
 
     return jsonify({
         "usuario": {"nome": usuario["nome"], "email": usuario["email"]},
-        "prospectados": prospectados,
-        "visitados": visitados,
+        "prospectados": [dict(m) for m in prospectados],
+        "agendados": agendados_dict,
+        "visitados": [dict(m) for m in visitados],
+        "revisitar": [dict(m) for m in revisitar],
     })
 
 
@@ -401,7 +414,9 @@ def admin_dashboard():
 @app.route("/")
 @login_required
 def index():
+    usuario = usuario_logado()
     ticker = estatisticas_ticker()
+    dias_inativo = dias_sem_visitar(usuario["id"])
     return render_template(
         "index.html",
         especialidades=NOMES_ESPECIALIDADES,
@@ -411,6 +426,8 @@ def index():
             "visitados_mes": f"{ticker['visitados_mes']:,}".replace(",", "."),
             "buscas_hoje": f"{ticker['buscas_hoje']:,}".replace(",", "."),
         },
+        aviso_inatividade=(dias_inativo is not None and dias_inativo >= 10),
+        dias_inativo=dias_inativo,
     )
 
 
@@ -508,9 +525,17 @@ def api_buscar():
 def api_painel_listar():
     usuario = usuario_logado()
     painel = listar_painel_usuario(usuario["id"])
+    prospectados, agendados, visitados, revisitar = bucket_painel(painel)
+
+    agendados_dict = [dict(m) for m in agendados]
+    for m in agendados_dict:
+        m["compromisso"] = buscar_compromisso_do_medico(usuario["id"], m["id"])
+
     return jsonify({
-        "prospectados": [dict(m) for m in painel if m["status"] == "prospectado"],
-        "visitados": [dict(m) for m in painel if m["status"] == "visitado"],
+        "prospectados": [dict(m) for m in prospectados],
+        "agendados": agendados_dict,
+        "visitados": [dict(m) for m in visitados],
+        "revisitar": [dict(m) for m in revisitar],
     })
 
 
@@ -535,11 +560,76 @@ def api_painel_mover():
     entrada_id = dados.get("id")
     novo_status = dados.get("status")
 
-    if not entrada_id or novo_status not in ("prospectado", "visitado"):
+    if not entrada_id or novo_status not in ("prospectado", "agendado", "visitado"):
         return jsonify({"ok": False, "mensagem": "Requisição inválida."}), 400
 
     ok = mover_no_painel(usuario["id"], int(entrada_id), novo_status)
     return jsonify({"ok": ok})
+
+
+@app.route("/api/painel/<int:entrada_id>/observacoes", methods=["POST"])
+@login_required
+def api_painel_observacoes(entrada_id):
+    usuario = usuario_logado()
+    dados = request.get_json(force=True) or {}
+    texto = (dados.get("texto") or "").strip()
+
+    ok = salvar_observacoes(usuario["id"], entrada_id, texto)
+    return jsonify({"ok": ok})
+
+
+@app.route("/api/painel/agendar", methods=["POST"])
+@login_required
+def api_painel_agendar():
+    usuario = usuario_logado()
+    dados = request.get_json(force=True) or {}
+    entrada_id = dados.get("id")
+    data = (dados.get("data") or "").strip()
+    horario = (dados.get("horario") or "").strip()
+
+    if not entrada_id or not data or not horario:
+        return jsonify({"ok": False, "mensagem": "Escolha uma data e um horário."}), 400
+
+    ok, mensagem = agendar_medico(usuario["id"], int(entrada_id), data, horario)
+    return jsonify({"ok": ok, "mensagem": mensagem})
+
+
+@app.route("/api/painel/<int:entrada_id>/cancelar-agendamento", methods=["POST"])
+@login_required
+def api_painel_cancelar_agendamento(entrada_id):
+    usuario = usuario_logado()
+    ok = cancelar_agendamento(usuario["id"], entrada_id)
+    return jsonify({"ok": ok})
+
+
+@app.route("/agenda")
+@login_required
+def agenda():
+    return render_template("agenda.html")
+
+
+@app.route("/api/agenda/mes")
+@login_required
+def api_agenda_mes():
+    usuario = usuario_logado()
+    try:
+        ano = int(request.args.get("ano"))
+        mes = int(request.args.get("mes"))
+    except (TypeError, ValueError):
+        return jsonify({"erro": "Parâmetros inválidos."}), 400
+
+    return jsonify({"dias": listar_compromissos_mes(usuario["id"], ano, mes)})
+
+
+@app.route("/api/agenda/dia")
+@login_required
+def api_agenda_dia():
+    usuario = usuario_logado()
+    data = (request.args.get("data") or "").strip()
+    if not data:
+        return jsonify({"erro": "Informe a data."}), 400
+
+    return jsonify({"horarios": listar_horarios_dia(usuario["id"], data)})
 
 
 def abrir_navegador():

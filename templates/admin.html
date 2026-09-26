@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cannal · Painel Admin</title>
+<title>i.cannal · Painel Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
@@ -33,7 +33,13 @@
 </head>
 <body>
   <div class="admin-header">
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" style="height:28px;">
+    <svg viewBox="0 0 260 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="i.cannal" style="height:28px;width:auto;display:block;">
+      <polygon points="2,0 15,0 29,40 16,40" fill="#88AD36"/>
+      <polygon points="23,0 36,0 50,40 37,40" fill="#88AD36"/>
+      <text x="64" y="30" font-family="Montserrat, sans-serif" font-weight="800" font-size="27" letter-spacing="0.3">
+        <tspan fill="#A8CC5A">i.</tspan><tspan fill="#FFFFFF">cannal</tspan>
+      </text>
+    </svg>
     <div class="admin-header-direita">
       <div class="notif-wrapper">
         <button type="button" id="btn-notif" class="btn-notif" aria-label="Notificações">
@@ -56,7 +62,7 @@
   <div class="hero-secao">
     <div class="hero-secao-conteudo">
       <h1>Usuários cadastrados</h1>
-      <p>{{ usuarios|length }} pessoa(s) já criaram conta no Cannal.</p>
+      <p>{{ usuarios|length }} pessoa(s) já criaram conta no i.cannal.</p>
     </div>
   </div>
 
@@ -116,14 +122,22 @@
         <h2 id="modal-titulo">Painel médico</h2>
         <button type="button" id="modal-fechar" class="modal-fechar" aria-label="Fechar">&times;</button>
       </div>
-      <div class="modal-colunas">
+      <div class="modal-colunas modal-colunas-4">
         <div>
           <h3>Prospectados <span class="painel-contador" id="modal-contador-prospectados">0</span></h3>
           <div class="modal-lista" id="modal-lista-prospectados"></div>
         </div>
         <div>
+          <h3>Agendados <span class="painel-contador" id="modal-contador-agendados">0</span></h3>
+          <div class="modal-lista" id="modal-lista-agendados"></div>
+        </div>
+        <div>
           <h3>Visitados <span class="painel-contador" id="modal-contador-visitados">0</span></h3>
           <div class="modal-lista" id="modal-lista-visitados"></div>
+        </div>
+        <div>
+          <h3>Revisitar <span class="painel-contador" id="modal-contador-revisitar">0</span></h3>
+          <div class="modal-lista" id="modal-lista-revisitar"></div>
         </div>
       </div>
     </div>
@@ -142,8 +156,16 @@
           <span class="stat-valor" id="dash-total-prospectados">0</span>
         </div>
         <div class="stat-card">
+          <span class="stat-label">Total agendados</span>
+          <span class="stat-valor" id="dash-total-agendados">0</span>
+        </div>
+        <div class="stat-card">
           <span class="stat-label">Total visitados</span>
           <span class="stat-valor" id="dash-total-visitados">0</span>
+        </div>
+        <div class="stat-card stat-card-alerta">
+          <span class="stat-label">A revisitar</span>
+          <span class="stat-valor" id="dash-total-revisitar">0</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">Visitados este mês</span>
@@ -151,6 +173,9 @@
           <span class="stat-extra" id="dash-variacao-mes"></span>
         </div>
       </div>
+
+      <h3 class="modal-secao-titulo">Próximos agendamentos</h3>
+      <div class="modal-lista" id="dash-proximos-agendamentos"></div>
 
       <h3 class="modal-secao-titulo">Médicos na base por período</h3>
       <table class="tabela-periodos">
@@ -186,15 +211,24 @@
     const modalTitulo = document.getElementById('modal-titulo');
     const modalFechar = document.getElementById('modal-fechar');
     const modalListaProspectados = document.getElementById('modal-lista-prospectados');
+    const modalListaAgendados = document.getElementById('modal-lista-agendados');
     const modalListaVisitados = document.getElementById('modal-lista-visitados');
+    const modalListaRevisitar = document.getElementById('modal-lista-revisitar');
     const modalContadorProspectados = document.getElementById('modal-contador-prospectados');
+    const modalContadorAgendados = document.getElementById('modal-contador-agendados');
     const modalContadorVisitados = document.getElementById('modal-contador-visitados');
+    const modalContadorRevisitar = document.getElementById('modal-contador-revisitar');
 
-    function criarCardModal(item){
+    function criarCardModal(item, coluna){
       const div = document.createElement('div');
       div.className = 'modal-card';
       const linhaLocal = [item.cidade, item.uf].filter(Boolean).join(' - ');
-      const classeNome = item.status === 'visitado' ? ' class="nome-visitado"' : '';
+      const classeNome = (coluna === 'visitados' || coluna === 'revisitar') ? ' class="nome-visitado"' : '';
+      let badge = '';
+      if(coluna === 'agendados' && item.compromisso){
+        const [ano, mes, dia] = item.compromisso.data.split('-');
+        badge = `<span>📅 ${dia}/${mes} às ${item.compromisso.horario}</span>`;
+      }
       div.innerHTML = `
         <strong${classeNome}>${item.nome}</strong>
         <span>${item.especialidade || ''}</span>
@@ -202,37 +236,38 @@
         <span>${linhaLocal}</span>
         <span>${item.endereco || ''}</span>
         <span>${item.telefone || ''}</span>
+        ${badge}
       `;
       return div;
     }
 
     function abrirPainelDoUsuario(id, nome){
       modalTitulo.textContent = `Painel médico — ${nome}`;
+      [modalListaProspectados, modalListaAgendados, modalListaVisitados, modalListaRevisitar].forEach(el => el.innerHTML = '');
       modalListaProspectados.innerHTML = '<div class="modal-vazio">Carregando...</div>';
-      modalListaVisitados.innerHTML = '';
-      modalContadorProspectados.textContent = '0';
-      modalContadorVisitados.textContent = '0';
+      [modalContadorProspectados, modalContadorAgendados, modalContadorVisitados, modalContadorRevisitar].forEach(el => el.textContent = '0');
       modalOverlay.classList.add('aberto');
 
       fetch(`/admin/painel/${id}`)
         .then(res => res.json())
         .then(dados => {
-          modalListaProspectados.innerHTML = '';
-          modalListaVisitados.innerHTML = '';
-          modalContadorProspectados.textContent = dados.prospectados.length;
-          modalContadorVisitados.textContent = dados.visitados.length;
+          const colunas = [
+            ['prospectados', modalListaProspectados, modalContadorProspectados, 'Nenhum médico prospectado.'],
+            ['agendados', modalListaAgendados, modalContadorAgendados, 'Nenhuma visita agendada.'],
+            ['visitados', modalListaVisitados, modalContadorVisitados, 'Nenhum médico visitado.'],
+            ['revisitar', modalListaRevisitar, modalContadorRevisitar, 'Ninguém pra revisitar.'],
+          ];
 
-          if(dados.prospectados.length === 0){
-            modalListaProspectados.innerHTML = '<div class="modal-vazio">Nenhum médico prospectado.</div>';
-          } else {
-            dados.prospectados.forEach(item => modalListaProspectados.appendChild(criarCardModal(item)));
-          }
-
-          if(dados.visitados.length === 0){
-            modalListaVisitados.innerHTML = '<div class="modal-vazio">Nenhum médico visitado.</div>';
-          } else {
-            dados.visitados.forEach(item => modalListaVisitados.appendChild(criarCardModal(item)));
-          }
+          colunas.forEach(([chave, listaEl, contadorEl, msgVazio]) => {
+            const itens = dados[chave] || [];
+            contadorEl.textContent = itens.length;
+            listaEl.innerHTML = '';
+            if(itens.length === 0){
+              listaEl.innerHTML = `<div class="modal-vazio">${msgVazio}</div>`;
+            } else {
+              itens.forEach(item => listaEl.appendChild(criarCardModal(item, chave)));
+            }
+          });
         })
         .catch(() => {
           modalListaProspectados.innerHTML = '<div class="modal-vazio">Não foi possível carregar o painel.</div>';
@@ -259,13 +294,31 @@
         .then(res => res.json())
         .then(dados => {
           document.getElementById('dash-total-prospectados').textContent = dados.total_prospectados;
+          document.getElementById('dash-total-agendados').textContent = dados.total_agendados;
           document.getElementById('dash-total-visitados').textContent = dados.total_visitados;
+          document.getElementById('dash-total-revisitar').textContent = dados.total_revisitar;
           document.getElementById('dash-visitados-mes').textContent = dados.visitados_mes_atual;
 
           const variacaoEl = document.getElementById('dash-variacao-mes');
           const seta = dados.variacao_visitados_pct >= 0 ? '↑' : '↓';
           variacaoEl.textContent = `${seta} ${Math.abs(dados.variacao_visitados_pct)}% vs mês anterior`;
           variacaoEl.className = 'stat-extra ' + (dados.variacao_visitados_pct >= 0 ? 'stat-alta' : 'stat-baixa');
+
+          const listaAgendamentos = document.getElementById('dash-proximos-agendamentos');
+          if(dados.proximos_agendamentos.length === 0){
+            listaAgendamentos.innerHTML = '<div class="modal-vazio">Nenhuma visita agendada nos próximos dias.</div>';
+          } else {
+            listaAgendamentos.innerHTML = dados.proximos_agendamentos.map(a => {
+              const [ano, mes, dia] = a.data.split('-');
+              const local = [a.cidade, a.uf].filter(Boolean).join(' - ');
+              return `
+                <div class="modal-card">
+                  <strong>${dia}/${mes} às ${a.horario} — ${a.medico_nome}</strong>
+                  <span>${a.especialidade || ''}${local ? ' · ' + local : ''}</span>
+                </div>
+              `;
+            }).join('');
+          }
 
           document.getElementById('dash-buscas-hoje').textContent = dados.buscas_hoje;
           document.getElementById('dash-buscas-7d').textContent = dados.buscas_7d;
