@@ -106,6 +106,17 @@ def inicializar_auth(app, sqlite_path):
                 criado_em TEXT NOT NULL
             )
         """
+        sql_agenda = """
+            CREATE TABLE IF NOT EXISTS agenda_compromissos (
+                id SERIAL PRIMARY KEY,
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+                painel_medico_id INTEGER NOT NULL REFERENCES painel_medicos(id),
+                data TEXT NOT NULL,
+                horario TEXT NOT NULL,
+                criado_em TEXT NOT NULL,
+                UNIQUE(usuario_id, data, horario)
+            )
+        """
     else:
         sql_usuarios = """
             CREATE TABLE IF NOT EXISTS usuarios (
@@ -153,6 +164,17 @@ def inicializar_auth(app, sqlite_path):
                 criado_em TEXT NOT NULL
             )
         """
+        sql_agenda = """
+            CREATE TABLE IF NOT EXISTS agenda_compromissos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+                painel_medico_id INTEGER NOT NULL REFERENCES painel_medicos(id),
+                data TEXT NOT NULL,
+                horario TEXT NOT NULL,
+                criado_em TEXT NOT NULL,
+                UNIQUE(usuario_id, data, horario)
+            )
+        """
 
     with _conexao() as conn:
         cursor = conn.cursor()
@@ -160,10 +182,12 @@ def inicializar_auth(app, sqlite_path):
         cursor.execute(sql_painel)
         cursor.execute(sql_buscas_log)
         cursor.execute(sql_solicitacoes_senha)
+        cursor.execute(sql_agenda)
 
     # Bancos criados antes dessa versão não têm essa coluna — adiciona sem
     # quebrar se ela já existir (mesmo problema que já pegou o "cpf" antes).
     _adicionar_coluna_se_faltar("painel_medicos", "visitado_em", "TEXT")
+    _adicionar_coluna_se_faltar("painel_medicos", "observacoes", "TEXT")
 
     @app.context_processor
     def injetar_usuario_logado():
@@ -433,7 +457,7 @@ def adicionar_ao_painel(usuario_id: int, medico: dict):
 
 
 def mover_no_painel(usuario_id: int, entrada_id: int, novo_status: str) -> bool:
-    if novo_status not in ("prospectado", "visitado"):
+    if novo_status not in ("prospectado", "agendado", "visitado"):
         return False
     with _conexao() as conn:
         cursor = conn.cursor()
@@ -451,6 +475,32 @@ def mover_no_painel(usuario_id: int, entrada_id: int, novo_status: str) -> bool:
         return cursor.rowcount > 0
 
 
+def bucket_painel(painel_rows):
+    """Agrupa os registros do painel em 4 colunas: prospectados, agendados,
+    visitados e revisitar (visitados há 60 dias ou mais)."""
+    agora = datetime.utcnow()
+    limite_revisitar = agora - timedelta(days=60)
+    prospectados, agendados, visitados, revisitar = [], [], [], []
+
+    for m in painel_rows:
+        status = m["status"]
+        if status == "prospectado":
+            prospectados.append(m)
+        elif status == "agendado":
+            agendados.append(m)
+        elif status == "visitado":
+            antigo = False
+            visitado_em = m["visitado_em"]
+            if visitado_em:
+                try:
+                    antigo = datetime.fromisoformat(visitado_em) < limite_revisitar
+                except ValueError:
+                    pass
+            (revisitar if antigo else visitados).append(m)
+
+    return prospectados, agendados, visitados, revisitar
+
+
 def listar_painel_usuario(usuario_id: int):
     with _conexao() as conn:
         cursor = conn.cursor()
@@ -459,6 +509,173 @@ def listar_painel_usuario(usuario_id: int):
             (usuario_id,),
         )
         return cursor.fetchall()
+
+
+# ---------------------------------------------------------------------------
+# Agenda de visitas
+# ---------------------------------------------------------------------------
+
+HORARIOS_AGENDA = [
+    f"{h:02d}:{m:02d}" for h in range(8, 18) for m in (0, 30)
+]  # 08:00 até 17:30, de 30 em 30 min
+
+
+def listar_horarios_dia(usuario_id: int, data: str):
+    """Devolve os 20 horários do dia (08:00–17:30), cada um marcado como livre
+    ou já ocupado (com os dados do médico daquele compromisso)."""
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("""
+                SELECT a.horario, a.painel_medico_id, p.nome, p.especialidade, p.cidade, p.uf
+                FROM agenda_compromissos a
+                JOIN painel_medicos p ON p.id = a.painel_medico_id
+                WHERE a.usuario_id = ? AND a.data = ?
+            """),
+            (usuario_id, data),
+        )
+        ocupados = {row["horario"]: dict(row) for row in cursor.fetchall()}
+
+    return [
+        {
+            "horario": h,
+            "ocupado": h in ocupados,
+            "medico": ocupados.get(h),
+        }
+        for h in HORARIOS_AGENDA
+    ]
+
+
+def agendar_medico(usuario_id: int, entrada_id: int, data: str, horario: str):
+    """Marca um horário da agenda do usuário pra visitar um médico específico
+    do painel dele. Retorna (ok, mensagem)."""
+    if horario not in HORARIOS_AGENDA:
+        return False, "Horário inválido."
+
+    agora = datetime.utcnow().isoformat()
+
+    with _conexao() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            _q("SELECT id, status FROM painel_medicos WHERE id = ? AND usuario_id = ?"),
+            (entrada_id, usuario_id),
+        )
+        entrada = cursor.fetchone()
+        if not entrada:
+            return False, "Médico não encontrado no seu painel."
+
+        cursor.execute(
+            _q("SELECT id FROM agenda_compromissos WHERE usuario_id = ? AND data = ? AND horario = ?"),
+            (usuario_id, data, horario),
+        )
+        if cursor.fetchone():
+            return False, "Esse horário já está ocupado na sua agenda."
+
+        try:
+            cursor.execute(
+                _q("""INSERT INTO agenda_compromissos (usuario_id, painel_medico_id, data, horario, criado_em)
+                      VALUES (?, ?, ?, ?, ?)"""),
+                (usuario_id, entrada_id, data, horario, agora),
+            )
+        except ErroIntegridade:
+            return False, "Esse horário já está ocupado na sua agenda."
+
+        cursor.execute(
+            _q("UPDATE painel_medicos SET status = 'agendado', visitado_em = NULL WHERE id = ? AND usuario_id = ?"),
+            (entrada_id, usuario_id),
+        )
+
+    return True, "Visita agendada com sucesso."
+
+
+def cancelar_agendamento(usuario_id: int, entrada_id: int) -> bool:
+    """Libera o horário da agenda e volta o médico pra 'prospectado'."""
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("DELETE FROM agenda_compromissos WHERE usuario_id = ? AND painel_medico_id = ?"),
+            (usuario_id, entrada_id),
+        )
+        cursor.execute(
+            _q("UPDATE painel_medicos SET status = 'prospectado' WHERE id = ? AND usuario_id = ?"),
+            (entrada_id, usuario_id),
+        )
+        return cursor.rowcount > 0
+
+
+def listar_compromissos_mes(usuario_id: int, ano: int, mes: int):
+    """Pros pontinhos no calendário: quantos compromissos existem em cada dia
+    do mês (pra saber quais dias marcar como 'tem agenda')."""
+    prefixo = f"{ano:04d}-{mes:02d}-"
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("""
+                SELECT data, COUNT(*) AS total
+                FROM agenda_compromissos
+                WHERE usuario_id = ? AND data LIKE ?
+                GROUP BY data
+            """),
+            (usuario_id, prefixo + "%"),
+        )
+        return {row["data"]: row["total"] for row in cursor.fetchall()}
+
+
+def buscar_compromisso_do_medico(usuario_id: int, painel_medico_id: int):
+    """O compromisso agendado (data/horário) mais próximo pra esse médico,
+    usado pra mostrar o selo de data no card da coluna Agendados."""
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("""SELECT data, horario FROM agenda_compromissos
+                  WHERE usuario_id = ? AND painel_medico_id = ?
+                  ORDER BY data, horario LIMIT 1"""),
+            (usuario_id, painel_medico_id),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Observações do médico
+# ---------------------------------------------------------------------------
+
+def salvar_observacoes(usuario_id: int, entrada_id: int, texto: str) -> bool:
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("UPDATE painel_medicos SET observacoes = ? WHERE id = ? AND usuario_id = ?"),
+            (texto, entrada_id, usuario_id),
+        )
+        return cursor.rowcount > 0
+
+
+# ---------------------------------------------------------------------------
+# Alerta de inatividade (sem visitar médicos do painel há muito tempo)
+# ---------------------------------------------------------------------------
+
+def dias_sem_visitar(usuario_id: int):
+    """Quantos dias fazem desde a última vez que o usuário marcou um médico
+    como visitado. None se ele nunca visitou nenhum."""
+    with _conexao() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            _q("SELECT MAX(visitado_em) AS ultima FROM painel_medicos WHERE usuario_id = ? AND visitado_em IS NOT NULL"),
+            (usuario_id,),
+        )
+        linha = cursor.fetchone()
+        ultima = linha["ultima"] if linha else None
+
+    if not ultima:
+        return None
+
+    try:
+        dt = datetime.fromisoformat(ultima)
+    except ValueError:
+        return None
+
+    return (datetime.utcnow() - dt).days
 
 
 def chaves_no_painel_usuario(usuario_id: int) -> set:
@@ -652,8 +869,15 @@ def estatisticas_dashboard():
             return cursor.fetchone()["total"]
 
         prospectados = contar("SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'prospectado'")
+        agendados = contar("SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'agendado'")
         visitados = contar("SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'visitado'")
         usuarios_total = contar("SELECT COUNT(*) AS total FROM usuarios")
+
+        limite_revisitar_str = (agora - timedelta(days=60)).isoformat()
+        revisitar_total = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE status = 'visitado' AND visitado_em < ?",
+            (limite_revisitar_str,),
+        )
 
         medicos_base = contar("SELECT COUNT(DISTINCT chave_medico) AS total FROM painel_medicos")
         medicos_semana = contar(
@@ -713,6 +937,17 @@ def estatisticas_dashboard():
         """))
         por_cidade = [dict(r) for r in cursor.fetchall()]
 
+        cursor.execute(_q("""
+            SELECT a.data, a.horario, p.nome AS medico_nome, p.especialidade, p.cidade, p.uf, u.nome AS usuario_nome
+            FROM agenda_compromissos a
+            JOIN painel_medicos p ON p.id = a.painel_medico_id
+            JOIN usuarios u ON u.id = a.usuario_id
+            WHERE a.data >= ?
+            ORDER BY a.data, a.horario
+            LIMIT 15
+        """), (hoje_str,))
+        proximos_agendamentos = [dict(r) for r in cursor.fetchall()]
+
         serie_meses = []
         for inicio, fim in zip(inicios_meses, fins_meses):
             inicio_str = inicio.isoformat()
@@ -733,7 +968,9 @@ def estatisticas_dashboard():
 
     return {
         "prospectados": prospectados,
+        "agendados": agendados,
         "visitados": visitados,
+        "revisitar_total": revisitar_total,
         "usuarios_total": usuarios_total,
         "medicos_base": medicos_base,
         "medicos_semana": medicos_semana,
@@ -751,6 +988,7 @@ def estatisticas_dashboard():
         "por_estado": por_estado,
         "por_cidade": por_cidade,
         "serie_meses": serie_meses,
+        "proximos_agendamentos": proximos_agendamentos,
     }
 
 
@@ -798,8 +1036,15 @@ def estatisticas_usuario(usuario_id: int):
         total_prospectados = contar(
             "SELECT COUNT(*) AS total FROM painel_medicos WHERE usuario_id = ? AND status = 'prospectado'", (usuario_id,)
         )
+        total_agendados = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE usuario_id = ? AND status = 'agendado'", (usuario_id,)
+        )
         total_visitados = contar(
             "SELECT COUNT(*) AS total FROM painel_medicos WHERE usuario_id = ? AND status = 'visitado'", (usuario_id,)
+        )
+        total_revisitar = contar(
+            "SELECT COUNT(*) AS total FROM painel_medicos WHERE usuario_id = ? AND status = 'visitado' AND visitado_em < ?",
+            (usuario_id, d60_str),
         )
 
         visitados_mes_atual = contar(
@@ -830,9 +1075,21 @@ def estatisticas_usuario(usuario_id: int):
         """), (usuario_id,))
         top_especialidades = [dict(r) for r in cursor.fetchall()]
 
+        cursor.execute(_q("""
+            SELECT a.data, a.horario, p.nome AS medico_nome, p.especialidade, p.cidade, p.uf
+            FROM agenda_compromissos a
+            JOIN painel_medicos p ON p.id = a.painel_medico_id
+            WHERE a.usuario_id = ? AND a.data >= ?
+            ORDER BY a.data, a.horario
+            LIMIT 10
+        """), (usuario_id, hoje_str))
+        proximos_agendamentos = [dict(r) for r in cursor.fetchall()]
+
     return {
         "total_prospectados": total_prospectados,
+        "total_agendados": total_agendados,
         "total_visitados": total_visitados,
+        "total_revisitar": total_revisitar,
         "tabela_periodos": tabela_periodos,
         "visitados_mes_atual": visitados_mes_atual,
         "visitados_mes_anterior": visitados_mes_anterior,
@@ -841,4 +1098,5 @@ def estatisticas_usuario(usuario_id: int):
         "buscas_7d": buscas_7d,
         "buscas_30d": buscas_30d,
         "top_especialidades": top_especialidades,
+        "proximos_agendamentos": proximos_agendamentos,
     }

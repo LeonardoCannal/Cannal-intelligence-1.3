@@ -3,15 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cannal · Criar conta</title>
+<title>i.cannal · Criar conta</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 </head>
 <body>
   <div class="auth-tela">
     <div class="auth-card">
-      <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" class="auth-logo">
-      <h1>Criar conta no Cannal</h1>
+      <svg class="auth-logo" viewBox="0 0 260 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="i.cannal">
+        <polygon points="2,0 15,0 29,40 16,40" fill="#88AD36"/>
+        <polygon points="23,0 36,0 50,40 37,40" fill="#88AD36"/>
+        <text x="64" y="30" font-family="Montserrat, sans-serif" font-weight="800" font-size="27" letter-spacing="0.3">
+          <tspan fill="#A8CC5A">i.</tspan><tspan fill="#FFFFFF">cannal</tspan>
+        </text>
+      </svg>
+      <h1>Criar conta no i.cannal</h1>
 
       {% if erro %}<div class="auth-erro">{{ erro }}</div>{% endif %}
 

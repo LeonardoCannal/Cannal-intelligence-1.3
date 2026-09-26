@@ -523,6 +523,11 @@ body{
 
 .stat-card:hover{ transform: translateY(-2px); box-shadow: 0 14px 28px rgba(23,27,34,.09); border-color: transparent; }
 
+.stat-card-alerta{ background: #FBEFD6; border-color: #E7B84A; }
+.stat-card-alerta .stat-label{ color: #95650B; }
+.stat-card-alerta .stat-valor{ color: #7A5A0B; }
+.stat-card-alerta .stat-extra{ color: #95650B; }
+
 .stat-label{ font-size: 12.5px; color: var(--cinza); font-weight: 600; }
 .stat-valor{ font-size: 29px; font-weight: 800; letter-spacing: -0.02em; color: var(--escuro); line-height: 1; font-variant-numeric: tabular-nums; }
 .stat-extra{ font-size: 11.5px; color: var(--cinza); }
@@ -787,6 +792,16 @@ table.tabela-periodos tr:last-child td{ border-bottom: none; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+}
+
+.modal-colunas-4{
+  grid-template-columns: repeat(4, 1fr);
+}
+
+#modal-overlay .modal-painel{ max-width: 960px; }
+
+@media (max-width: 860px){
+  .modal-colunas-4{ grid-template-columns: 1fr 1fr; }
 }
 
 .modal-colunas h3{

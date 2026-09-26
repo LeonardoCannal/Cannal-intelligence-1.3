@@ -3,14 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cannal · Dashboard</title>
+<title>i.cannal · Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="admin-header">
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="Cannal" style="height:28px;">
+    <svg viewBox="0 0 260 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="i.cannal" style="height:28px;width:auto;display:block;">
+      <polygon points="2,0 15,0 29,40 16,40" fill="#88AD36"/>
+      <polygon points="23,0 36,0 50,40 37,40" fill="#88AD36"/>
+      <text x="64" y="30" font-family="Montserrat, sans-serif" font-weight="800" font-size="27" letter-spacing="0.3">
+        <tspan fill="#A8CC5A">i.</tspan><tspan fill="#FFFFFF">cannal</tspan>
+      </text>
+    </svg>
     <div class="admin-header-direita">
       <div class="notif-wrapper">
         <button type="button" id="btn-notif" class="btn-notif" aria-label="Notificações">
@@ -33,7 +39,7 @@
   <div class="hero-secao">
     <div class="hero-secao-conteudo">
       <h1>Dashboard</h1>
-      <p>Visão geral do Cannal em números.</p>
+      <p>Visão geral do i.cannal em números.</p>
     </div>
   </div>
 
@@ -50,8 +56,17 @@
         <span class="stat-valor">{{ stats.prospectados }}</span>
       </div>
       <div class="stat-card">
+        <span class="stat-label">Médicos agendados</span>
+        <span class="stat-valor">{{ stats.agendados }}</span>
+      </div>
+      <div class="stat-card">
         <span class="stat-label">Médicos visitados</span>
         <span class="stat-valor">{{ stats.visitados }}</span>
+      </div>
+      <div class="stat-card stat-card-alerta">
+        <span class="stat-label">Precisam ser revisitados</span>
+        <span class="stat-valor">{{ stats.revisitar_total }}</span>
+        <span class="stat-extra">60+ dias sem nova visita</span>
       </div>
       <div class="stat-card">
         <span class="stat-label">Usuários cadastrados</span>
@@ -89,6 +104,33 @@
           <div class="mini-stat"><span class="mini-valor">{{ stats.ativos_30d }}</span><span class="mini-label">30 dias</span></div>
         </div>
       </div>
+    </div>
+
+    <div class="card-grafico">
+      <h3>Próximos agendamentos</h3>
+      {% if stats.proximos_agendamentos %}
+      <div class="tabela-scroll">
+        <table class="tabela-admin">
+          <thead>
+            <tr><th>Data</th><th>Horário</th><th>Médico</th><th>Especialidade</th><th>Cidade</th><th>Vendedor</th></tr>
+          </thead>
+          <tbody>
+            {% for a in stats.proximos_agendamentos %}
+            <tr>
+              <td>{{ a.data[8:10] }}/{{ a.data[5:7] }}/{{ a.data[0:4] }}</td>
+              <td>{{ a.horario }}</td>
+              <td>{{ a.medico_nome }}</td>
+              <td>{{ a.especialidade or '-' }}</td>
+              <td>{{ a.cidade }}{% if a.uf %} - {{ a.uf }}{% endif %}</td>
+              <td>{{ a.usuario_nome }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="grafico-vazio">Nenhuma visita agendada nos próximos dias.</div>
+      {% endif %}
     </div>
 
     <div class="card-grafico">
